@@ -12,6 +12,39 @@ from foo.tools.back_correct_skew import back_correct_skew
 from foo.tools.config import *
 
 
+# from foo.tools.front_tools import *  #  稍后进行测试
+
+
+def check_location(img, region):
+    """
+    检测位置是否正确
+    :param img: 原图
+    :param region: 各信息位置
+    :return:
+    """
+    # print(regions, regions[0][0][2])
+
+    if region[0][0][3] < 15 or region[0][0][3] > 30 or region[0][0][2] < 25:
+        return 1
+    elif cal_cross_ratio(region[1][0][1], region[1][0][1] + region[1][0][3], region[2][0][1],
+                         region[2][0][1] + region[2][0][3]) < 0.5:
+        return 1
+    elif cal_cross_ratio(region[3][0][1], region[3][0][1] + region[3][0][3], region[4][0][1],
+                         region[4][0][1] + region[4][0][3]) < 0.5 or \
+            cal_cross_ratio(region[4][0][1], region[4][0][1] + region[4][0][3], region[5][0][1],
+                            region[5][0][1] + region[5][0][3]) < 0.5:
+        return 1
+    elif region[7][0][2] < 200:
+        return 1
+    elif check_idnumber(img):
+        return 1
+    elif img.shape[0] / img.shape[1] < 290 / 500 or img.shape[0] / img.shape[1] > 350 / 500:
+        return 1
+    elif region[7][0][1] + 1/2* region[7][0][3] <  region[8][0][1] + region[8][0][3]:
+        return 1
+    else:
+        return 0
+
 
 def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     """
@@ -609,3 +642,15 @@ def get_u_d_l_r(rect):
     upper, down = rect[1], rect[1] + rect[3]
     left, right = rect[0], rect[0] + rect[2]
     return upper, down, left, right
+
+
+def cal_cross_ratio(y11, y12, y21, y22):
+    """
+    计算交并比
+    :param y11: 第一个矩形上边位置
+    :param y12: 第一个矩形下边位置
+    :param y21: 第二个矩形上边位置
+    :param y22: 第二个矩形下边位置
+    :return:
+    """
+    return (min(y12, y22) - max(y11, y21)) / (max(y12, y22) - min(y11, y21))

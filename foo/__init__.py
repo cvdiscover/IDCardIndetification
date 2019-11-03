@@ -9,7 +9,7 @@ import dlib
 from PIL import Image
 from datetime import datetime
 from foo.tools.front_correct_skew import correct_skew,resize
-# from foo.idcard_fromt_detection import *
+from foo.idcard_front_detection import *
 
 # 加载人脸检测模型
 classfier = cv2.CascadeClassifier("haarcascades/haarcascade_frontalface_alt2.xml")
