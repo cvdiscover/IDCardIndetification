@@ -138,3 +138,5 @@ def get_regions(img, scale, is_address=0, is_name=0, is_date=0, is_front = 1, is
     # plt.imshow(img, cmap=plt.gray())
     # plt.show()
     return np.array(text_region)
+
+
