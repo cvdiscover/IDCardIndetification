@@ -62,7 +62,7 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     #精准确定照片位置
     photo_x1 = face_rect[0][0] - 40
     photo_x2 = face_rect[0][0] + face_rect[0][2] + 40
-    photo_y1 = face_rect[0][1]  - 40
+    photo_y1 = face_rect[0][1] - 40
     photo_y2 = face_rect[0][1] + face_rect[0][3] + 60
     photo_cut = img[photo_y1:photo_y2, photo_x1:photo_x2]
     plt.imshow(photo_cut, cmap=plt.gray())

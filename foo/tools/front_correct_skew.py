@@ -1353,7 +1353,7 @@ def filter_and_classify_lines(img, lines, img2, face_rect):
     lines_2d = merge_lines(lines_2d)
     for line in lines_2d:
         x1, y1, x2, y2 = line
-        if (abs(x1 - x2) < abs(y1 - y2) and abs(x1 - x2) > 0.3 * abs(y1 - y2)) or (
+        if (abs(y1 - y2) > abs(x1 - x2) > 0.3 * abs(y1 - y2)) or (
                 (abs(x1 - x2) > abs(y1 - y2)) and abs(y1 - y2) > 0.3 * abs(x1 - x2)):
             continue
         if abs(x1 - x2) > abs(y1 - y2) and math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2) > 100:
@@ -1473,10 +1473,11 @@ def front_correct_skew(img):
     #     lines = get_border_gradient(img.copy())
 
     # get_border_gradient(img.copy())
-
     # 人脸及人脸特征点检测
+    print(os.path.relpath("C:/Users/Alexi/Desktop/IDCard_Identification/foo/tools/shape_predictor_68_face_landmarks.dat"))
+
     detector = dlib.get_frontal_face_detector()
-    predictor = dlib.shape_predictor("C:/Users/Alexi/Desktop/IDCard_Identification/shape_predictor_68_face_landmarks.dat")
+    predictor = dlib.shape_predictor("tools/shape_predictor_68_face_landmarks.dat") # C:/Users/Alexi/Desktop/IDCard_Identification/foo/shape_predictor_68_face_landmarks.dat
     faces = detector(img, 1)
     face_rect = faces[0]
     max_face = [face_rect.left(), face_rect.top(), face_rect.right() - face_rect.left(),
