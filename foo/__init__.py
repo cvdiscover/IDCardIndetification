@@ -149,7 +149,6 @@ def face_detect(img):
     from foo.tools.back_correct_skew import cal_rotation_angle
     angle = cal_rotation_angle(img.copy())
 
-
     # 将填充颜色改为（100,100,100）
     img1 = Image.fromarray(np.array(img))
     im2 = img1.copy().convert('RGBA')
@@ -216,10 +215,6 @@ if __name__ == "__main__":
     else:
 
         img_name = "2f7677bf-691a-4c96-9151-37657e27cf9d.jpeg"
-        # img_name = "0d4dc06f-c59c-429b-9034-748e9b00da84.jpeg"
         path = "C:/Users/Alexi/Desktop/idcard_info/sfz_front/"+ img_name
-        # img_name = "28"
-        # path = "D:/datasets/project_datasets/idcard/images/" + img_name + ".jpg"
-        #"1bcad970-a536-41bb-885b-aaed1ba48e38.jpeg"
         save_name = "C:/Users/Alexi/Desktop/IDCard_Identification/output/"+img_name.split(".")[0]+".jpg"
         single_process(path, save_name)  # 单张调试
