@@ -8,8 +8,9 @@ import matplotlib.pylab as plt
 import dlib
 from PIL import Image
 from datetime import datetime
-from back_correct import back_correct_skew
-from config import *
+from foo.tools.back_correct_skew import back_correct_skew
+from foo.tools.config import *
+from foo.tools.tools import *
 
 
 # from predict_location import predict_location
@@ -1475,7 +1476,7 @@ def front_correct_skew(img):
 
     # 人脸及人脸特征点检测
     detector = dlib.get_frontal_face_detector()
-    predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+    predictor = dlib.shape_predictor("C:/Users/Alexi/Desktop/IDCard_Identification/shape_predictor_68_face_landmarks.dat")
     faces = detector(img, 1)
     face_rect = faces[0]
     max_face = [face_rect.left(), face_rect.top(), face_rect.right() - face_rect.left(),

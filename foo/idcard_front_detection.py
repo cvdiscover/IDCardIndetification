@@ -10,6 +10,7 @@ from PIL import Image
 from datetime import datetime
 from foo.tools.back_correct_skew import back_correct_skew
 from foo.tools.config import *
+from foo.tools.tools import *
 
 
 # from foo.tools.front_tools import *  #  稍后进行测试

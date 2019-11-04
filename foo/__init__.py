@@ -8,11 +8,12 @@ import matplotlib.pylab as plt
 import dlib
 from PIL import Image
 from datetime import datetime
-from foo.tools.front_correct_skew import correct_skew,resize
+from foo.tools.front_correct_skew import correct_skew, resize
+from foo.idcard_back_detection import *
 from foo.idcard_front_detection import *
 
 # 加载人脸检测模型
-classfier = cv2.CascadeClassifier("haarcascades/haarcascade_frontalface_alt2.xml")
+classfier = cv2.CascadeClassifier("C:/Users/Alexi/Desktop/IDCard_Identification/haarcascades/haarcascade_frontalface_alt2.xml")
 detector = dlib.get_frontal_face_detector()
 
 
@@ -58,13 +59,13 @@ def single_process(path, save_name):
     img = resize(img.copy(), width=500)
     img = face_detect(img)
     start_time = datetime.now()
-
     faces = detector(img, 1)
     if len(img.shape) == 3:
         grey = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2GRAY)
     else:
         gray = np.array(img)
     # 使用opencv人脸检测模型
+
     faces_cv = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
     if len(faces) > 0 and len(faces_cv) > 0:
         face_rect = faces[0]
@@ -145,7 +146,7 @@ def single_process(path, save_name):
 
 def face_detect(img):
 
-    from back_correct import cal_rotation_angle
+    from foo.tools.back_correct_skew import cal_rotation_angle
     angle = cal_rotation_angle(img.copy())
 
 
@@ -196,7 +197,6 @@ def face_detect(img):
         if len(faces_dlib) == 0 or len(faces_cv) ==0:
             is_front = 0
 
-
     # print(len(faces_dlib), len(faces_cv))
     # plt.imshow(img_rotation, cmap=plt.gray())
     # plt.show()
@@ -215,11 +215,11 @@ if __name__ == "__main__":
         batch_process(input_dir, output_dir)  # 批量处理
     else:
 
-        img_name = "1ba6ce9d-9170-425d-a04c-0b8b4bb6802d.jpeg"
+        img_name = "2f7677bf-691a-4c96-9151-37657e27cf9d.jpeg"
         # img_name = "0d4dc06f-c59c-429b-9034-748e9b00da84.jpeg"
         path = "C:/Users/Alexi/Desktop/idcard_info/sfz_front/"+ img_name
         # img_name = "28"
         # path = "D:/datasets/project_datasets/idcard/images/" + img_name + ".jpg"
         #"1bcad970-a536-41bb-885b-aaed1ba48e38.jpeg"
-        save_name = "output/"+img_name.split(".")[0]+".jpg"
+        save_name = "C:/Users/Alexi/Desktop/IDCard_Identification/output/"+img_name.split(".")[0]+".jpg"
         single_process(path, save_name)  # 单张调试

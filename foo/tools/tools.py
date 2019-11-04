@@ -147,3 +147,124 @@ def cal_cross_ratio(y11, y12, y21, y22):
     :return:
     """
     return (min(y12, y22) - max(y11, y21)) / (max(y12, y22) - min(y11, y21))
+
+
+def project(img_binary, orientation=0, is_show = 0):
+    """
+    图片投影
+    :param img_binary: 二值图片
+    :param orientation: 投影方向 0：水平投影  1：垂直投影
+    :return:
+    """
+    img_binary = np.array(img_binary)
+    (h, w) = img_binary.shape  # 返回高和宽
+    # print(h,w)#s输出高和宽
+    thresh_copy = img_binary.copy()
+    thresh_copy[:, :] = 255
+    # 水平投影
+    if orientation == 0:
+        # horizontal_count = np.array([0 for z in range(0, h)])
+        # # 每行白色像素个数
+        # for j in range(0, h):
+        #     horizontal_count[j] = np.count_nonzero(img_binary[j, :])
+        horizontal_count = img_binary.sum(axis=1) / 255
+        count = horizontal_count
+        for j in range(0, h):  # 遍历每一行
+            # for i in range(0, int(horizontal_count[j])):
+            #     thresh_copy[j, i] = 0
+            thresh_copy[j, 0:int(horizontal_count[j])] = 0
+        if is_show:
+            plt.imshow(thresh_copy, cmap=plt.gray())
+            plt.show()
+    else:
+        # vertical_count = np.array([0 for z in range(0, w)])
+        # # 每列白色像素个数
+        # for j in range(0, w):
+        #     vertical_count[j] = np.count_nonzero(img_binary[:, j])
+        vertical_count = img_binary.sum(axis=0) / 255
+        count = vertical_count
+        for j in range(0, w):  # 遍历每一列
+            # for i in range((h - int(vertical_count[j])), h):  # 从该列应该变黑的最顶部的点开始向最底部涂黑
+            #     thresh_copy[i, j] = 0  # 涂黑
+            thresh_copy[(h - int(vertical_count[j])): h, j] = 0
+        if is_show:
+            plt.imshow(thresh_copy, cmap=plt.gray())
+            plt.show()
+    return count
+
+
+def check_idnumber(img):
+    imgHeight, imgWidth = 316, 500
+    id_y = int(imgHeight / 1.3)
+    id_x = int(imgWidth / 3.06)
+    id_addHeight = int(id_y + imgHeight / 6.70)
+    id_addWidth = int(id_x + 322)
+    id = img[id_y:id_addHeight, id_x:id_addWidth]
+    img_gray = cv2.cvtColor(id, cv2.COLOR_BGR2GRAY)
+    img_gray_blur = cv2.medianBlur(img_gray, 5)
+    th, img_binary = cv2.threshold(img_gray_blur, 128, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    # plt.imshow(img_binary, cmap=plt.gray())
+    # plt.show()
+    horizonal_number = project(img_binary, 0)
+    best_center = get_best_region(horizonal_number)
+    if  best_center > 40 or best_center < 12:
+        return 1
+    else:
+        return 0
+
+
+def get_best_region(count):
+    """
+    根据图片像素投影分割图片
+    :param count: 投影值
+    :return:
+    """
+
+    k = 20
+    # 当前27个数据和
+    sum = 0
+    # 最大27个数据和
+    best_score = 0
+    # 当前27个数据
+    ring_buffer = np.zeros(k)
+    # 最佳偏移
+    best_offset = 0
+
+    for y_offset in range(len(count)):
+        score = count[y_offset]
+        sum += score
+        buffer_index = y_offset % k
+        ring_buffer[buffer_index] = score
+
+        if (y_offset >= k - 1):
+            if (sum > best_score):
+                best_score = sum
+                best_offset = y_offset - k + 1
+            next_buffer_index = (y_offset + 1) % k
+            sum -= ring_buffer[next_buffer_index]
+
+    return (best_offset+  int(k / 2))
+
+
+def resize(image, width=None, height=None, inter=cv2.INTER_AREA):  #
+    """
+    使用插值方法对图片 resize
+    :param image:图片
+    :param width:宽度
+    :param height:高度
+    :param inter:插值方法
+    :return:调整大小后的图片
+    """
+    dim = None
+    (h, w) = image.shape[:2]  #
+    if width is None and height is None:
+        return image
+    if width is None:
+        r = height / float(h)
+        dim = (int(w * r), height)
+    else:
+        r = width / float(w)
+        dim = (width, int(h * r))
+    # print(dim)
+    resized = cv2.resize(image, dim, interpolation=inter)  # interpo;ation为插值方法，这里选用的是
+    return resized

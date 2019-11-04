@@ -140,3 +140,96 @@ def get_regions(img, scale, is_address=0, is_name=0, is_date=0, is_front = 1, is
     return np.array(text_region)
 
 
+def find_word_regions(img, is_address=0, is_name=0, is_date=0):
+    """
+       获取一个二值图片中的文本位置
+       :param img: 图片
+       :param is_address: 是否是地址
+       :return: 文本位置
+           """
+    regions = []
+    # 1. 查找轮廓
+    # plt.imshow(img)
+    # plt.show()
+    contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # 2. 筛选那些面积小的
+    contours_sorted = sorted(contours, key=cv2.contourArea, reverse=True)[:10]
+    # 取面积最大的轮廓
+    if is_address == 0:
+        # if is_name == 0:
+        #     max_contour = contours_sorted[0]
+        #     rect = cv2.boundingRect(max_contour)
+        #     regions.append(rect)
+        # else:
+        pre_regions = []
+        for i in range(len(contours_sorted)):
+            cnt = contours_sorted[i]
+            # 计算该轮廓的面积
+            area = cv2.contourArea(cnt)
+            # 面积小的都筛选掉
+            if (area < 100 and is_date == 0) or (area < 60 and is_date == 1):
+                continue
+
+            # 找到最小的矩形，该矩形可能有方向
+            rect = cv2.boundingRect(cnt)
+            pre_regions.append(rect)
+
+        if len(pre_regions) > 1:
+            name_rect = np.array(pre_regions[0])
+            for i in range(1, len(pre_regions)):
+                if pre_regions[i][3] > name_rect[3] * 4 / 5:
+                    name_rect[1] = min(name_rect[1], pre_regions[i][1])
+                    name_rect[2] = max(name_rect[0] + name_rect[2], pre_regions[i][0] + pre_regions[i][2]) - min(
+                        name_rect[0], pre_regions[i][0])
+                    name_rect[0] = min(name_rect[0], pre_regions[i][0])
+                    name_rect[3] = max(name_rect[3], pre_regions[i][3])
+            regions.append(name_rect)
+        else:
+            regions = pre_regions
+
+        regions = np.array(regions)
+        regions[0][3] = regions[0][3] if regions[0][3] > 15 else 15
+        regions[0][1] = regions[0][1] - 3
+        regions[0][3] = regions[0][3] + 3
+    else:
+        for i in range(len(contours_sorted)):
+            cnt = contours_sorted[i]
+            # 计算该轮廓的面积
+            area = cv2.contourArea(cnt)
+            # 面积小的都筛选掉
+            if (area < 150):
+                continue
+
+            # 找到最小的矩形，该矩形可能有方向
+            rect = cv2.boundingRect(cnt)
+
+            # # 计算高和宽
+            width = rect[2]
+            hight = rect[3]
+
+            # 筛选那些太细的矩形，留下扁的
+            if hight > width * 1.3 or hight < 10:
+                continue
+
+            regions.append(rect)
+        regions = remove_inside(regions)
+        regions = merge(regions)
+        for rect in regions:
+            if rect[0] > 30 and rect[2] < 20:
+                regions.remove(rect)
+                continue
+            # 如果地址第一二行连接在一起，则将其分离
+            if rect[3] > 40 and rect[3] < 60 and rect[1] < 20:
+                regions.append([rect[0], rect[1], rect[2], int(rect[3] / 2 - 3)])
+                regions.append([rect[0], rect[1] + int(rect[3] / 2 + 3), rect[2], int(rect[3] / 2 - 3)])
+                regions.remove(rect)
+            #  如果地址第二三行连接在一起，则将其分离
+            if rect[3] > 40 and rect[1] > 20:
+                regions.append([rect[0], rect[1], rect[2], int(rect[3] / 2 - 3)])
+                regions.append([rect[0], rect[1] + int(rect[3] / 2 + 3), rect[2], int(rect[3] / 2 - 3)])
+                regions.remove(rect)
+
+    return remove_inside(regions)
+
+

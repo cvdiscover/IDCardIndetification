@@ -6,6 +6,7 @@ import skimage.transform.radon_transform as transform
 import math
 from PIL import Image
 from datetime import datetime
+from foo.tools.tools import *
 
 
 def extract_peek_ranges_from_array(array_vals, minimun_val=10, minimun_range=2):
@@ -67,7 +68,7 @@ def cal_rotation_angle(img):
     """
     img_mark = mark_corner_image(img, point_size = 3)
     # 投影计算角度，对图片进行纠正
-    from idcard_locate import project
+    from foo.tools.tools import project
 
     project_image = np.zeros((180, img_mark.shape[0]))
 
@@ -156,7 +157,7 @@ def correct_image(img):
     # img_correction = np.array(img_correction)
     img_mark = mark_corner_image(img_correction)
 
-    from idcard_locate import project
+    from foo.tools.tools import project
 
     # print("radon time:",datetime.now() - start_time)
     horizontal_sum = project(img_mark, orientation=0, is_show=1)
@@ -225,7 +226,7 @@ def get_lines(img):
     :return: 水平线位置、竖直线位置
     """
     img2 = img.copy()
-    from correct_skew import get_border_by_canny
+    from foo.tools.front_correct_skew import get_border_by_canny
     lines = get_border_by_canny(img)
     horizontal, vertical = [], []  # 创建水平和垂直线list
     lines_2d_original = lines[:, 0, :]
@@ -236,7 +237,7 @@ def get_lines(img):
         lines_2d.append([x1, y1, x2, y2])
         # cv2.line(img2, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
-    from correct_skew import merge_lines
+    from foo.tools.front_correct_skew import merge_lines
     lines_2d = merge_lines(lines_2d)
     for line in lines_2d:
         x1, y1, x2, y2 = line
@@ -286,7 +287,7 @@ def back_correct_skew(img):
 
     prediction_location = [int(text1[0][1]), int(text2[0][1]),  int(text2[0][0] -  0.9 * max(text2[1][0], text2[1][1])), int(text2[0][0] + 0.9 * max(text2[1][0], text2[1][1]))]
     # 计算横线倾斜角度
-    from correct_skew import cal_distance
+    from foo.tools.front_correct_skew import cal_distance
 
     d_t_min = h
     d_b_min = h
@@ -337,16 +338,13 @@ def back_correct_skew(img):
     print(top_line, bottom_line, left_line, right_line)
     return np.array(img), top_line, bottom_line, left_line, right_line
 
-
-
-
 # cv2.imencode('.jpg', img_copy)[1].tofile(str(save_name) + ".jpg")
 
 # if __name__ == '__main__':
 
 
 if __name__ == '__main__':
-    from correct_skew import resize
+    # from foo.tools.front_correct_skew import resize
     is_batch = 0
     if is_batch:
         input_dir = "F:/idcard/HR/HR/"
@@ -379,7 +377,7 @@ if __name__ == '__main__':
         # plt.imshow(img)
         # plt.show()
 
-        from correct_skew import find_cross_point
+        from foo.tools.front_correct_skew import find_cross_point
         t_l_point = find_cross_point(top, left)
         t_r_point = find_cross_point(top, right)
         b_l_point = find_cross_point(bottom, left)
