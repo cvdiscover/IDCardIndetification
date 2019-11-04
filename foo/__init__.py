@@ -193,7 +193,7 @@ def face_detect(img):
         # 使用opencv人脸检测模型
         faces_cv = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
         #print(len(faces_dlib),len(faces_cv))
-        if len(faces_dlib) == 0 or len(faces_cv) ==0:
+        if len(faces_dlib) == 0 or len(faces_cv) == 0:
             is_front = 0
 
     # print(len(faces_dlib), len(faces_cv))
@@ -214,7 +214,7 @@ if __name__ == "__main__":
         batch_process(input_dir, output_dir)  # 批量处理
     else:
 
-        img_name = "2f7677bf-691a-4c96-9151-37657e27cf9d.jpeg"
+        img_name = "1ba6ce9d-9170-425d-a04c-0b8b4bb6802d.jpeg"
         path = "C:/Users/Alexi/Desktop/idcard_info/sfz_front/"+ img_name
         save_name = "../output/"+img_name.split(".")[0]+".jpg"
         single_process(path, save_name)  # 单张调试
