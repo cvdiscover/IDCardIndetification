@@ -13,7 +13,7 @@ from foo.idcard_back_detection import *
 from foo.idcard_front_detection import *
 
 # 加载人脸检测模型
-classfier = cv2.CascadeClassifier("C:/Users/Alexi/Desktop/IDCard_Identification/haarcascades/haarcascade_frontalface_alt2.xml")
+classfier = cv2.CascadeClassifier("../haarcascades/haarcascade_frontalface_alt2.xml")
 detector = dlib.get_frontal_face_detector()
 
 
@@ -216,5 +216,5 @@ if __name__ == "__main__":
 
         img_name = "2f7677bf-691a-4c96-9151-37657e27cf9d.jpeg"
         path = "C:/Users/Alexi/Desktop/idcard_info/sfz_front/"+ img_name
-        save_name = "C:/Users/Alexi/Desktop/IDCard_Identification/output/"+img_name.split(".")[0]+".jpg"
+        save_name = "../output/"+img_name.split(".")[0]+".jpg"
         single_process(path, save_name)  # 单张调试
