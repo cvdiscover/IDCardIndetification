@@ -65,7 +65,9 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     photo_y1 = face_rect[0][1] - 40
     photo_y2 = face_rect[0][1] + face_rect[0][3] + 60
     photo_cut = img[photo_y1:photo_y2, photo_x1:photo_x2]
-    plt.imshow(photo_cut, cmap=plt.gray())
+    img=cv2.rectangle(img,(photo_x1,photo_y1),(photo_x2,photo_y2),(0,0,255),2)
+    plt.imshow(img,cmap=plt.gray())
+    #plt.imshow(photo_cut, cmap=plt.gray())
     plt.show()
     photo_region = get_photo_position(photo_cut)
     photo_region[0][0] += photo_x1
@@ -80,8 +82,9 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     #address_addWidth = face_rect[0][0] + int(face_rect[0][2] / 2) - 78
     address_addWidth = photo_region[0][0]
     address = img[address_y:address_addHeight, address_x:address_addWidth]
-    # plt.imshow(address, cmap=plt.gray())
-    # plt.show()
+    img = cv2.rectangle(img, (address_x, address_y), (address_addWidth, address_addHeight), (0, 0, 255), 2)
+    #plt.imshow(img, cmap=plt.gray())
+    #plt.show()
     try:
         # address_region = get_regions(address, 1, 1)
         # if len(address_region) == 0:
@@ -100,8 +103,9 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     name_addHeight = int(name_y + 46) + 10
     name_addWidth = int(name_x + imgWidth / 4)
     name = img[name_y:name_addHeight, name_x:name_addWidth]
-    # plt.imshow(name, cmap=plt.gray())
-    # plt.show()
+    img = cv2.rectangle(img, (name_x, name_y), (name_addWidth, name_addHeight), (0, 0, 255), 2)
+    #plt.imshow(name, cmap=plt.gray())
+    #plt.show()
     # scale = int(img.shape[1] / 500)
     # print(scale, img.shape)
     try:
@@ -120,8 +124,9 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     sex_addHeight = int(sex_y + imgHeight / 7.71)
     sex_addWidth = int(sex_x + 45)
     sex = img[sex_y:sex_addHeight, sex_x:sex_addWidth]
-    # plt.imshow(sex, cmap=plt.gray())
-    # plt.show()
+    img = cv2.rectangle(img, (sex_x, sex_y), (sex_addWidth, sex_addHeight), (0, 0, 255), 2)
+    #plt.imshow(sex, cmap=plt.gray())
+    #plt.show()
     try:
         sex_region = get_regions(sex, 1)
         if len(sex_region) == 0:
@@ -140,6 +145,7 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     nationality_addHeight = int(nationality_y + imgHeight / 7.71)
     nationality_addWidth = int(nationality_x + 50)
     nationality = img[nationality_y:nationality_addHeight, nationality_x:nationality_addWidth]
+    img = cv2.rectangle(img, (nationality_x, nationality_y), (nationality_addWidth, nationality_addHeight), (0, 0, 255), 2)
     # plt.imshow(nationality, cmap=plt.gray())
     # plt.show()
     try:
@@ -159,6 +165,7 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     birth_year_addHeight = int(birth_year_y + imgHeight / 7.71)
     birth_year_addWidth = int(birth_year_x + 68)
     birth_year = img[birth_year_y:birth_year_addHeight, birth_year_x:birth_year_addWidth]
+    img = cv2.rectangle(img, (birth_year_x, birth_year_y), (birth_year_addWidth, birth_year_addHeight), (0, 0, 255), 2)
     # plt.imshow(birth_year, cmap=plt.gray())
     # plt.show()
     try:
@@ -178,8 +185,8 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     birth_month_addHeight = int(birth_month_y + imgHeight / 7.71)
     birth_month_addWidth = int(birth_month_x + 37)
     birth_month = img[birth_month_y:birth_month_addHeight, birth_month_x:birth_month_addWidth]
-    # plt.imshow(birth_month, cmap=plt.gray())
-    # plt.show()
+    img = cv2.rectangle(img, (birth_month_x, birth_month_y), (birth_month_addWidth, birth_month_addHeight), (0, 0, 255), 2)
+
     try:
         birth_month_region = get_regions(birth_month, 1, is_date=1)
         if len(birth_month_region) == 0:
@@ -197,6 +204,7 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     birth_day_addHeight = int(birth_day_y + imgHeight / 7.71)
     birth_day_addWidth = int(birth_day_x + 37)
     birth_day = img[birth_day_y:birth_day_addHeight, birth_day_x:birth_day_addWidth]
+    img = cv2.rectangle(img, (birth_day_x, birth_day_y), (birth_day_addWidth, birth_day_addHeight), (0, 0, 255), 2)
     # plt.imshow(birth_day, cmap=plt.gray())
     # plt.show()
     try:
@@ -219,6 +227,7 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     id_addHeight = int(id_y + imgHeight / 6.70)
     id_addWidth = int(id_x + 322)
     id = img[id_y:id_addHeight, id_x:id_addWidth]
+    img = cv2.rectangle(img, (id_x, id_y), (id_addWidth, id_addHeight), (0, 0, 255), 2)
     # plt.imshow(id, cmap=plt.gray())
     # plt.show()
     try:
@@ -230,7 +239,8 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     id_region[0][0] += id_x
     id_region[0][1] += id_y
     regions.append(id_region)
-
+    # plt.imshow(birth_year, cmap=plt.gray())
+    # plt.show()
     # 照片
     # photo_y = int(imgHeight / 6)
     # photo_x = int(imgWidth / 1.6)
@@ -284,7 +294,7 @@ def get_photo_position(img):
     #img_erode = cv2.erode(img, erode_elment, iterations=1)
 
 
-    contours, _ = cv2.findContours(img_dilate, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
+    res,contours,hi = cv2.findContours(img_dilate, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
     contours_sorted = sorted(contours, key=cv2.contourArea, reverse=True)
 
     cnt_1 = contours_sorted[0]

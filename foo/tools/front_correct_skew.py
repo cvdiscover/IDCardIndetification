@@ -113,7 +113,8 @@ def get_id_by_binary(img, face_rect):
         plt.show()
     id_rect = [0, 0, 0, 0]
     # 1. 查找轮廓
-    contours, _ = cv2.findContours(img_dilate, cv2.RETR_TREE , cv2.CHAIN_APPROX_SIMPLE)
+
+    binary,contours,hierarchy= cv2.findContours(img_dilate, cv2.RETR_TREE , cv2.CHAIN_APPROX_SIMPLE)
     # cv2.drawContours(img, contours, -1, (0, 0, 255), 3)
     # plt.imshow(img_dilate, cmap=plt.gray())
     # plt.show()
@@ -1474,7 +1475,6 @@ def front_correct_skew(img):
 
     # get_border_gradient(img.copy())
     # 人脸及人脸特征点检测
-    print(os.path.relpath("C:/Users/Alexi/Desktop/IDCard_Identification/foo/tools/shape_predictor_68_face_landmarks.dat"))
 
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor("tools/shape_predictor_68_face_landmarks.dat") # C:/Users/Alexi/Desktop/IDCard_Identification/foo/shape_predictor_68_face_landmarks.dat

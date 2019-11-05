@@ -209,12 +209,12 @@ if __name__ == "__main__":
     is_debug = 0
     is_batch = 0
     if is_batch:
-        input_dir = "C:/Users/Alexi/Desktop/idcard_info/sfz_front"
-        output_dir = "C:/Users/Alexi/Desktop/idcard_info/sfz_result"
+        input_dir = "D:/datasets/sfz_pictures"
+        output_dir = "D:/datasets/sfz_front_output9"
         batch_process(input_dir, output_dir)  # 批量处理
     else:
 
-        img_name = "2f7677bf-691a-4c96-9151-37657e27cf9d.jpeg"
-        path = "C:/Users/Alexi/Desktop/idcard_info/sfz_front/"+ img_name
+        img_name = "10.jpeg"
+        path = "D:/datasets/sfz_pictures/"+ img_name
         save_name = "../output/"+img_name.split(".")[0]+".jpg"
         single_process(path, save_name)  # 单张调试
