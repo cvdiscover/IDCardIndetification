@@ -1694,62 +1694,62 @@ def correct_skew(img, is_front, max_face=[0, 0, 0, 0]):
         return dst
 
 
-if __name__ == "__main__":
-    is_batch = 0
-    if is_batch == 0:
-        # path = "F:/idcard/problem_20190716/images/0123.jpg"
-        path = "F:/idcard/sfz/sfz_front/2aff5978-4473-412d-9927-c813de8242d9.jpeg"
-        # path = "F:/idcard/3(1)/3/images/65760311F8774D3B821B59240D35CB10.JPG"
-        img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), -1)
-        img = resize(img.copy(), width=500)
-        classfier = cv2.CascadeClassifier("haarcascades/haarcascade_frontalface_alt2.xml")
-        if len(img.shape) == 3:
-            grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-        faceRects = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
-        if len(faceRects) > 0:
-            max_face = faceRects[np.where(faceRects[:, 3] == faceRects[:, 3].max())]
-            # max_face = [[438, 187, 107, 108]]
-            img = correct_skew(img, 1, max_face[0])
-            # cv2.imwrite("2/output1/65E8225D40174C949AC06E6E82794C21.JPG", img)
-        else:
-            img = correct_skew(img, 0)
-    else:
-        # input_dir = "F:/idcard/problem_20190716/images/"
-        # output_dir = "F:/idcard/problem_20190716/output5/"
-
-        # input_dir = "F:/idcard/3(1)/3/images/"
-        # output_dir = "F:/idcard/3(1)/3/output4/"
-
-        input_dir = "F:/idcard/problem_20190716/images/"
-        output_dir = "F:/idcard/problem_20190716/output8/"
-
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        for filename in os.listdir(input_dir):
-            if len(filename.split(".")) < 2:
-                continue
-            print(filename)
-            path = input_dir + filename
-            # 读取图片
-            img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), -1)
-            img = resize(img.copy(), width=500)
-            # img = cv2.resize(img, (imgWidth, imgHeight))
-            classfier = cv2.CascadeClassifier("haarcascades/haarcascade_frontalface_alt2.xml")
-            if len(img.shape) == 3:
-                grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            else:
-                gray = img
-            faceRects = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
-            # 判断是否是正面,大于0则检测到人脸,是正面
-            if len(faceRects) > 0:
-                max_face = faceRects[np.where(faceRects[:, 3] == faceRects[:, 3].max())]
-                dst = correct_skew(img, 1, max_face[0])
-                # plt.imshow(dst)
-                # plt.show()
-                # print(output_dir + filename)
-                cv2.imwrite(output_dir + filename, dst)
-            else:
-                pass
-                # dst = correct_skew(img, 0)
-                # cv2.imwrite(output_dir + filename, dst)
+# if __name__ == "__main__":
+#     is_batch = 0
+#     if is_batch == 0:
+#         # path = "F:/idcard/problem_20190716/images/0123.jpg"
+#         path = "F:/idcard/sfz/sfz_front/2aff5978-4473-412d-9927-c813de8242d9.jpeg"
+#         # path = "F:/idcard/3(1)/3/images/65760311F8774D3B821B59240D35CB10.JPG"
+#         img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), -1)
+#         img = resize(img.copy(), width=500)
+#         classfier = cv2.CascadeClassifier("haarcascades/haarcascade_frontalface_alt2.xml")
+#         if len(img.shape) == 3:
+#             grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+#
+#         faceRects = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
+#         if len(faceRects) > 0:
+#             max_face = faceRects[np.where(faceRects[:, 3] == faceRects[:, 3].max())]
+#             # max_face = [[438, 187, 107, 108]]
+#             img = correct_skew(img, 1, max_face[0])
+#             # cv2.imwrite("2/output1/65E8225D40174C949AC06E6E82794C21.JPG", img)
+#         else:
+#             img = correct_skew(img, 0)
+#     else:
+#         # input_dir = "F:/idcard/problem_20190716/images/"
+#         # output_dir = "F:/idcard/problem_20190716/output5/"
+#
+#         # input_dir = "F:/idcard/3(1)/3/images/"
+#         # output_dir = "F:/idcard/3(1)/3/output4/"
+#
+#         input_dir = "F:/idcard/problem_20190716/images/"
+#         output_dir = "F:/idcard/problem_20190716/output8/"
+#
+#         if not os.path.exists(output_dir):
+#             os.makedirs(output_dir)
+#         for filename in os.listdir(input_dir):
+#             if len(filename.split(".")) < 2:
+#                 continue
+#             print(filename)
+#             path = input_dir + filename
+#             # 读取图片
+#             img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), -1)
+#             img = resize(img.copy(), width=500)
+#             # img = cv2.resize(img, (imgWidth, imgHeight))
+#             classfier = cv2.CascadeClassifier("haarcascades/haarcascade_frontalface_alt2.xml")
+#             if len(img.shape) == 3:
+#                 grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+#             else:
+#                 gray = img
+#             faceRects = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
+#             # 判断是否是正面,大于0则检测到人脸,是正面
+#             if len(faceRects) > 0:
+#                 max_face = faceRects[np.where(faceRects[:, 3] == faceRects[:, 3].max())]
+#                 dst = correct_skew(img, 1, max_face[0])
+#                 # plt.imshow(dst)
+#                 # plt.show()
+#                 # print(output_dir + filename)
+#                 cv2.imwrite(output_dir + filename, dst)
+#             else:
+#                 pass
+#                 # dst = correct_skew(img, 0)
+#                 # cv2.imwrite(output_dir + filename, dst)
