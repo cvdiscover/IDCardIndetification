@@ -214,7 +214,7 @@ if __name__ == "__main__":
         batch_process(input_dir, output_dir)  # 批量处理
     else:
 
-        img_name = "1ba6ce9d-9170-425d-a04c-0b8b4bb6802d.jpeg"
+        img_name = "1b486dea-a69b-4eaf-a12a-3c74898cdaa8.jpeg"
         path = "C:/Users/Alexi/Desktop/idcard_info/sfz_front/"+ img_name
         save_name = "../output/"+img_name.split(".")[0]+".jpg"
         single_process(path, save_name)  # 单张调试

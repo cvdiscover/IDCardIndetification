@@ -267,7 +267,6 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
 
 def get_photo_position(img):
     """
-
     :param img:
     :return:
     """
@@ -282,7 +281,6 @@ def get_photo_position(img):
     dilate_elment = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     img_dilate = cv2.dilate(img_contour, dilate_elment, iterations=1)
     #img_erode = cv2.erode(img, erode_elment, iterations=1)
-
 
     contours, _ = cv2.findContours(img_dilate, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
     contours_sorted = sorted(contours, key=cv2.contourArea, reverse=True)
@@ -362,6 +360,8 @@ def get_regions(img, scale, is_address=0, is_name=0, is_date=0, is_front = 1, is
         :param is_address: 是否是地址
         :return: 文本位置
         """
+    print("------------------")
+    print(img)
     img = img.copy()
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_gray = cv2.medianBlur(img_gray, 5)
