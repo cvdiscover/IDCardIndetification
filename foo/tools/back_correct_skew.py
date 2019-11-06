@@ -166,10 +166,8 @@ def correct_image(img):
     # img_correct = correct_image(img)
     img_mblur = cv2.medianBlur(img_mark, 1)
 
-
     elment = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 2))
     img_dilate = cv2.dilate(img_mblur, elment, iterations=2)
-
 
     contours, _ = cv2.findContours(img_dilate, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     rects = []

@@ -11,6 +11,7 @@ from datetime import datetime
 from foo.tools.front_correct_skew import correct_skew, resize
 from foo.idcard_back_detection import *
 from foo.idcard_front_detection import *
+from foo.tools.address import *
 
 # 加载人脸检测模型
 classfier = cv2.CascadeClassifier("../haarcascades/haarcascade_frontalface_alt2.xml")
@@ -90,8 +91,8 @@ def single_process(path, save_name):
                 copy.deepcopy(img), save_name, imgHeight, imgWidth, max_face)
             is_need_correct_skew = check_location(img, regions)
         else:
-            return
-            # box_get_back(img, save_name, imgHeight, imgWidth)
+
+            box_get_back(img, save_name, imgHeight, imgWidth)
             # is_need_correct_skew = 1
     except Exception as e:
         print("初次定位出错，需要进行纠偏！")
@@ -207,14 +208,14 @@ def face_detect(img):
 
 if __name__ == "__main__":
     is_debug = 0
-    is_batch = 0
+    is_batch = 1
     if is_batch:
-        input_dir = "C:/Users/Alexi/Desktop/idcard_info/sfz_front"
-        output_dir = "C:/Users/Alexi/Desktop/idcard_info/sfz_result"
+        input_dir = input_dir
+        output_dir = output_dir
         batch_process(input_dir, output_dir)  # 批量处理
     else:
 
-        img_name = "1b486dea-a69b-4eaf-a12a-3c74898cdaa8.jpeg"
-        path = "C:/Users/Alexi/Desktop/idcard_info/sfz_front/"+ img_name
+        img_name = img_name
+        path = path_without_img_name + img_name
         save_name = "../output/"+img_name.split(".")[0]+".jpg"
         single_process(path, save_name)  # 单张调试

@@ -90,6 +90,7 @@ ENV/
 env.bak/
 venv.bak/
 output/
+foo/tools/address.py
 
 # Spyder project settings
 .spyderproject
