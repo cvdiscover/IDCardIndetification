@@ -1062,6 +1062,7 @@ def get_best_from_two_method(line1, line2):
 def select_best_border(id_rect, lines1, lines2, lines3):
     """
     从不同算法得到的边界线中选择最佳的边界线
+    :param lines3: grabcut
     :param lines1: 通过边缘检测计算得到的边界线
     :param lines2: 通过最大轮廓得到的边界线
     :return: 选择的最佳边界线
@@ -1116,8 +1117,6 @@ def select_best_border(id_rect, lines1, lines2, lines3):
                     best_lines.append(line)
         elif len(lines2) != 4 and len(lines3) != 4:
             return lines1
-
-
 
 
     # print(best_lines)

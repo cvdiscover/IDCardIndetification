@@ -169,7 +169,7 @@ def correct_image(img):
     elment = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 2))
     img_dilate = cv2.dilate(img_mblur, elment, iterations=2)
 
-    contours, _ = cv2.findContours(img_dilate, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, _ = cv2.findContours(img_dilate, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     rects = []
     rects_m = []
     img_filter = img_dilate.copy()

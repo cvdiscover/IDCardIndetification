@@ -207,7 +207,7 @@ def check_idnumber(img):
     # plt.show()
     horizonal_number = project(img_binary, 0)
     best_center = get_best_region(horizonal_number)
-    if  best_center > 40 or best_center < 12:
+    if best_center > 40 or best_center < 12:
         return 1
     else:
         return 0
@@ -268,3 +268,10 @@ def resize(image, width=None, height=None, inter=cv2.INTER_AREA):  #
     # print(dim)
     resized = cv2.resize(image, dim, interpolation=inter)  # interpo;ation为插值方法，这里选用的是
     return resized
+
+
+def line_length(point1, point2):
+    x1, y1 = point1
+    x2, y2 = point2
+    length = math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+    return length
