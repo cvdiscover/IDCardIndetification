@@ -365,7 +365,7 @@ def complete_box(regions):
             regions[6][i, 0] = address_x
     return regions
 
-
+#获取框内文字信息
 def get_regions(img, scale, is_address=0, is_name=0, is_date=0, is_front = 1, is_consider_color = 1):
     """
         对单块区域处理后，获取文文本位置
