@@ -670,7 +670,7 @@ def get_border_by_grabcut(img, predict_border_lines):
         plt.show()
     return lines
 
-
+# 比较图片中心和边缘亮度 未用
 def compare_light(img):
     """
     比较图片中心和边缘亮度
@@ -1509,7 +1509,8 @@ def front_correct_skew(img):
             cv2.line(img2, (x1, y1), (x2, y2), (255, 0, 0), 5)
         plt.imshow(img2)
         plt.show()
-
+    # cv2.imshow("pred_line", img2)
+    # cv2.waitKey(0)
 
     # 通过canny算子计算梯度，并检测直线
     try:

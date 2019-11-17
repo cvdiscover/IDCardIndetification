@@ -295,7 +295,7 @@ def get_photo_position(img):
 
 
     # res,contours,hi = cv2.findContours(img_dilate, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
-    contours, _ = cv2.findContours(img_dilate, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, _ = cv2.findContours(img_dilate, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
     contours_sorted = sorted(contours, key=cv2.contourArea, reverse=True)
 
     cnt_1 = contours_sorted[0]
@@ -431,7 +431,7 @@ def get_regions(img, scale, is_address=0, is_name=0, is_date=0, is_front = 1, is
     # plt.show()
     return np.array(text_region)
 
-
+# 寻找文字区域
 def find_word_regions(img, is_address=0, is_name=0, is_date=0):
     """
        获取一个二值图片中的文本位置
@@ -443,7 +443,7 @@ def find_word_regions(img, is_address=0, is_name=0, is_date=0):
     # 1. 查找轮廓
     # plt.imshow(img)
     # plt.show()
-    contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # 2. 筛选那些面积小的
     contours_sorted = sorted(contours, key=cv2.contourArea, reverse=True)[:10]

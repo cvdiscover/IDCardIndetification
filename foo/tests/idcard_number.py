@@ -145,10 +145,10 @@ cv_show('gradX',gradX)
 thresh=cv2.threshold(gradX,0,255,cv2.THRESH_BINARY|cv2.THRESH_OTSU)[1]
 cv_show('thresh',thresh)
 
-thresh=cv2.morphologyEx(thresh,cv2.MORPH_CLOSE,sqlKernel)
+thresh1=cv2.morphologyEx(thresh,cv2.MORPH_CLOSE,sqlKernel)
 cv_show('thresh',thresh)
 
-threshCnts=cv2.findContours(thresh.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
+threshCnts=cv2.findContours(thresh1.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
 cnts=threshCnts
 
 cur_img=img.copy()

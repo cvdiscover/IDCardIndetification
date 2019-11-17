@@ -8,13 +8,12 @@ import math
 from PIL import Image
 import copy
 
-
 def cv_show(name, img):
     cv2.imshow(name, img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()  ##定义
 
-
+# 按比例进行大小的调整
 def resize(image, width=None, height=None, inter=cv2.INTER_AREA):
     ''' 插值方法选用基于局部像素的重采样
      image.shape[0]指图片长（垂直尺寸），image.shape[1]指图片宽（水平尺寸）
@@ -35,7 +34,6 @@ def resize(image, width=None, height=None, inter=cv2.INTER_AREA):
     resized = cv2.resize(image, dim, interpolation=inter)
     return resized
 
-
 def order_points(pts):
     rect = np.zeros((4, 2), dtype="float32")
     # 0,1,2,3分别对应左上，右上，右下和左下坐标
@@ -49,7 +47,7 @@ def order_points(pts):
     rect[3] = pts[np.argmax(diff)]
     return rect
 
-
+# 根据四个关键点进行透视变换
 def four_point_transform(img, pts):
     rect = order_points(pts)
     (tl, tr, br, bl) = rect
@@ -73,6 +71,33 @@ def four_point_transform(img, pts):
     # 返回变换后结果
     return warped
 
+def perspective_transformation(points, src):
+    """
+        传入四个点进行透视变换
+        :param flag: fitline: 直线检测拟合结果 else：pre预估结果
+        :param points: 包含四个点的点集
+        :return: 两直线交点
+        """
+    p1, p2, p3, p4 = points  # p1-右下  p2-左下  p3-右上  p4-左上
+    # 原图中书本的四个角点 左上、右上、左下、右下
+    pts1 = np.float32([p1, p2, p3, p4])
+    if p3[1] - p1[1] < p2[0] - p1[0]:
+        height = 500
+        width = int(height * 1.58)
+    else:
+        width = 500
+        height = int(width * 1.58)
+    # 变换后分别在左上、右上、左下、右下四个点
+    pts2 = np.float32([[0, 0], [width, 0], [0, height], [width, height]])
+    # 生成透视变换矩阵
+    M = cv2.getPerspectiveTransform(pts1, pts2)
+    # 进行透视变换
+    dst = cv2.warpPerspective(src, M, (width, height))
+    # plt.subplot(121), plt.imshow(src[:, :, ::-1]), plt.title('input')
+    # plt.subplot(122), plt.imshow(dst[:, :, ::-1]), plt.title('output')
+    # img[:, :, ::-1]是将BGR转化为RGB
+
+    return dst
 
 # 基于两直线的交点计算
 def find_cross_point(line1, line2):
@@ -112,7 +137,6 @@ def find_cross_point(line1, line2):
     y = k1 * x * 1.0 + b1 * 1.0
     return int(x), int(y)
 
-
 def shape_to_np(shape, dtype="int"):
     # 创建68*2
     coords = np.zeros((shape.num_parts, 2), dtype=dtype)
@@ -122,7 +146,7 @@ def shape_to_np(shape, dtype="int"):
         coords[i] = (shape.part(i).x, shape.part(i).y)
     return coords
 
-
+# 旋转+人脸检测
 def face_detect_rotation(img):
     # 加载人脸检测
     detector = dlib.get_frontal_face_detector()
@@ -179,13 +203,11 @@ def face_detect_rotation(img):
     y2 = shape[0][1]
     return shape, img1, img3, img4, img5, ratio
 
+def predict_rect(gray, scr, shape):
+    rectKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 3))
+    sqlKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 3))
 
-# 身份证位置检测
-def id_number_detect(img3, img1):
-    rectKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))
-    sqlKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 15))
-
-    tophat = cv2.morphologyEx(img1, cv2.MORPH_TOPHAT, rectKernel)
+    tophat = cv2.morphologyEx(gray, cv2.MORPH_TOPHAT, rectKernel)
     # cv_show('tophat', tophat)
     gradX = cv2.Sobel(tophat, ddepth=cv2.CV_32F, dx=1, dy=0, ksize=-1)
     gradX = np.absolute(gradX)
@@ -197,15 +219,15 @@ def id_number_detect(img3, img1):
     gradX = cv2.morphologyEx(gradX, cv2.MORPH_CLOSE, rectKernel, iterations=2)
     # cv_show('gradX', gradX)
     thresh = cv2.threshold(gradX, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-    # cv_show('thresh', thresh)
+    cv_show('thresh', thresh)
 
     thresh1 = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, sqlKernel)
-    # cv_show('thresh', thresh)
+    cv_show('thresh', thresh)
 
     threshCnts = cv2.findContours(thresh1.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[1]
     cnts = threshCnts
 
-    cur_img = img3.copy()
+    cur_img = scr.copy()
     cv2.drawContours(cur_img, cnts, -1, (0, 0, 255), 2)
     cv_show('img', cur_img)
 
@@ -213,40 +235,262 @@ def id_number_detect(img3, img1):
     # 遍历轮廓
     for (i, c) in enumerate(cnts):
         (x, y, w, h) = cv2.boundingRect(c)
-        # print(w, h)
+            # print(w, h)
         ar = w / float(h)
+        mid = (shape[1][1] + shape[3][1]) / 2.0
 
-        # 选择合适的区域，根据实际任务来，这里的基本上都是四个数字一组
-        if ar > 11 and ar < 40:
-            # if (w > 150 and w < 600):  # and (h>10 and h<20):
-            # 把符合的留下来
+            # 选择合适的区域，根据实际任务来，这里的基本上都是四个数字一组
+        if ar > 11 and ar < 40 and y >= shape[4][1]+1.5*(shape[4][1]-mid):
+                # 把符合的留下来
             locs.append((x, y, w, h))
+            print('locs', locs)
 
-    id_le = []
-    if len(locs) != 0:
-        for i in range(0, len(locs)):
-            id_le.append(locs[i][2] - locs[i][0])
-            i += 1
-            if i > len(locs):
-                break
-        # print('id_le', id_le)
-        # 身份证位置长度筛选
-        # 返回最大长度框的索引值
-        location = id_le.index(max(id_le))
-        # print('location', location)
-        max_rect = locs[location]
-        # print('le', max_rect)
+            gX = locs[0][0]
+            gY = locs[0][1]
+            gW = locs[0][2]
+            gH = locs[0][3]
+                # id_le = []
+                # if len(locs) != 0:
+                #     for i in range(0, len(locs)):
+                #         id_le.append(locs[i][2] - locs[i][0])
+                #         i += 1
+                #         if i > len(locs):
+                #             break
+                #     # print('id_le', id_le)
+                #     # 身份证位置长度筛选
+                #     # 返回最大长度框的索引值
+                #     location = id_le.index(max(id_le))
+                #     # print('location', location)
+                #     max_rect = locs[location]
+                #     print('max_rect', max_rect)
+                #
+                #     if max_rect[2] >= 550 or max_rect[2] <= 140:
+                #         max_rect = 0
+                #     else:
+                #         gX = max_rect[0]
+                #         gY = max_rect[1]
+                #         gW = max_rect[2]
+                #         gH = max_rect[3]
+            cv2.rectangle(scr, (gX - 3, gY - 3), (gX + gW + 3, gY + gH + 3), (0, 0, 255), 2)
+            detect_id = []
+            detect_id.append([gX - 3, gY - 3, gX + gW + 3, gY + gH + 3])
+            cv_show('rectangle', scr)
 
-        if max_rect[2] >= 550 or max_rect[2] <= 120:
-            max_rect = 0
-        else:
-            gX = max_rect[0]
-            gY = max_rect[1]
-            gW = max_rect[2]
-            gH = max_rect[3]
-    return locs, max_rect, gX, gY, gW, gH
+    #预估grabcut的rect值
+    if len(locs) == 0:
+        leng = abs(11.5 * (shape[0][0] - shape[2][0]))
+    else:
+        leng = abs(1.92 * (detect_id[0][2] - detect_id[0][0]))
+    mid = (shape[1][1] + shape[3][1]) / 2.0
+    wid = abs(14 * (mid - shape[4][1]))
+    print('leng', leng)
+    print('wid', wid)  # 计算长度和宽度
 
+    rt_x = shape[4][0] * 1.0 + (leng / 4.0)
+    rt_y = shape[4][1] * 1.0 - (wid / 2.0)
+    rb_x = rt_x
+    rb_y = rt_y + wid
+    lt_x = rt_x - leng
+    lt_y = rt_y
+    lb_x = rt_x - leng
+    lb_y = rt_y + wid  # 计算出rect的四个点
+    return lt_x, lt_y, leng, wid
+# 投影变换
+# def projection(img_binary, orientation=0, is_show = 0):
+#     """
+#     图片投影
+#     :param img_binary: 二值图片
+#     :param orientation: 投影方向 0：水平投影  1：垂直投影
+#     :return:
+#     """
+#     img_binary = np.array(img_binary)
+#     (h, w) = img_binary.shape  # 返回高和宽
+#     # print(h,w)#s输出高和宽
+#     thresh_copy = img_binary.copy()
+#     thresh_copy[:, :] = 255
+#     # 水平投影
+#     if orientation == 0:
+#         # horizontal_count = np.array([0 for z in range(0, h)])
+#         # # 每行白色像素个数
+#         # for j in range(0, h):
+#         #     horizontal_count[j] = np.count_nonzero(img_binary[j, :])
+#         horizontal_count = img_binary.sum(axis=1) / 255
+#         count = horizontal_count
+#         for j in range(0, h):  # 遍历每一行
+#             # for i in range(0, int(horizontal_count[j])):
+#             #     thresh_copy[j, i] = 0
+#             thresh_copy[j, 0:int(horizontal_count[j])] = 0
+#         if is_show:
+#             plt.imshow(thresh_copy, cmap=plt.gray())
+#             plt.show()
+#     else:
+#         # vertical_count = np.array([0 for z in range(0, w)])
+#         # # 每列白色像素个数
+#         # for j in range(0, w):
+#         #     vertical_count[j] = np.count_nonzero(img_binary[:, j])
+#         vertical_count = img_binary.sum(axis=0) / 255
+#         count = vertical_count
+#         for j in range(0, w):  # 遍历每一列
+#             # for i in range((h - int(vertical_count[j])), h):  # 从该列应该变黑的最顶部的点开始向最底部涂黑
+#             #     thresh_copy[i, j] = 0  # 涂黑
+#             thresh_copy[(h - int(vertical_count[j])): h, j] = 0
+#         if is_show:
+#             plt.imshow(thresh_copy, cmap=plt.gray())
+#             plt.show()
+#     return count
+#
+# # 提取峰值范围
+# def extract_peek_ranges_from_array(array_vals, minimun_val=10, minimun_range=2):
+#     """
+#     提取波峰
+#     :param array_vals: 投影数组
+#     :param minimun_val: 波峰最小值
+#     :param minimun_range: 波峰最小跨度
+#     :return:
+#     """
+#     start_i = None
+#     end_i = None
+#     peek_ranges = []
+#     for i, val in enumerate(array_vals):
+#         if val >= minimun_val and start_i is None:
+#             start_i = i
+#         elif val >= minimun_val and start_i is not None:
+#             pass
+#         elif val < minimun_val and start_i is not None:
+#             end_i = i
+#             if end_i - start_i >= minimun_range:
+#                 peek_ranges.append((start_i, end_i))
+#             start_i = None
+#             end_i = None
+#         elif val < minimun_val and start_i is None:
+#             pass
+#         else:
+#             print(val , minimun_val , start_i )
+#             raise ValueError("cannot parse this case...")
+#     return peek_ranges
+#
+# # 标记角点位置
+# def mark_corner_image(img,point_size = 3):
+#     """
+#     标记角点位置
+#     :param img: 图片
+#     :param point_size: 标记角点大小
+#     :return:
+#     """
+#     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+#     img_mark = gray.copy()
+#     img_mark[:, :] = 0
+#     gray = np.float32(gray)
+#
+#     # 输入图像必须是 float32 ,最后一个参数在 0.04 到 0.05 之间
+#     corners = cv2.goodFeaturesToTrack(gray, 500, 0.06, 1)
+#
+#     corners = np.int0(corners)
+#     # print(corners)
+#     corners_list = []
+#     for i in corners:
+#         x, y = i.ravel()
+#         # if y < 329 + 1.5 * 74 or y > 329 + 2.5 * 74:
+#         #     continue
+#         corners_list.append([x, y])
+#         #cv2.circle(img, (x, y), 3, (0, 0, 255), -1)
+#         cv2.circle(img_mark, (x, y), point_size, (255, 255, 255), -1)
+#
+#
+#     return img_mark
+#
+# # 计算旋转角度
+# def cal_rotation_angle(img):
+#     """
+#     计算旋转角度
+#     :param img: 图片
+#     :return:旋转角度
+#     """
+#     img_mark = mark_corner_image(img,point_size = 3)
+#     # 投影计算角度，对图片进行纠正
+#     project_image = np.zeros((180, img_mark.shape[0]))
+#
+#     img_mark_im = Image.fromarray(img_mark)
+#     for i in range(180):
+#         im_rotate = img_mark_im.rotate(i)
+#         project_image[i] = projection(im_rotate, orientation=0)
+#
+#     max_index = np.where(project_image[:, :] == project_image.max())
+#     rotate_angle = max_index[0][0]
+#     vertical_peek_ranges2d = []
+#     return rotate_angle
+#
+# # 纠正图片
+# def correct_image(img):
+#     """
+#     纠正图片
+#     :param img: 图片
+#     :return: 纠正后的图片、（中华人民共和国位置）、（有效日期位置）
+#     """
+#     angle = cal_rotation_angle(img)
+#     img_im = Image.fromarray(img)
+#     img_correction = np.array(img_im.rotate(angle, expand=True))
+#     # 双边均值滤波
+#     # img_correction = cv2.pyrMeanShiftFiltering(img_correction, 10, 50)
+#     # img_correction = np.array(img_correction)
+#     img_mark = mark_corner_image(img_correction)
+#
+#     # print("radon time:",datetime.now() - start_time)
+#     horizontal_sum = projection(img_mark, orientation=0, is_show=1)
+#     peek_ranges = extract_peek_ranges_from_array(horizontal_sum)
+#     print(peek_ranges)
+#     # img_correct = correct_image(img)
+#     img_mblur = cv2.medianBlur(img_mark, 1)
+#
+#
+#     elment = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 2))
+#     img_dilate = cv2.dilate(img_mblur, elment, iterations=2)
+#
+#
+#     contours, _ = cv2.findContours(img_dilate, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+#     rects = []
+#     rects_m = []
+#     img_filter = img_dilate.copy()
+#     img_filter[:, :] = 0
+#     for i in range(len(contours)):
+#         cnt = contours[i]
+#         # 计算该轮廓的面积
+#         area = cv2.contourArea(cnt)
+#         # 面积小的都筛选掉
+#         if (area < 800):
+#             continue
+#
+#         # 找到最小的矩形，该矩形可能有方向
+#         rect = cv2.boundingRect(cnt)
+#         if rect[2] < 150 or rect[3] < 10:
+#             continue
+#         rect_m = cv2.minAreaRect(cnt)
+#         #print(rect_m)
+#         rects.append(rect)
+#         rects_m.append(rect_m)
+#
+#         # cv2.drawContours(img_filter, cnt, 0, (255, 255, 255), 1)
+#     rects = np.array(rects)
+#     text1_index = np.where(rects[:, 1]==rects[:, 1].min())
+#     text1 = rects_m[text1_index[0][0]]
+#
+#     text2_index = np.where(rects[:, 1] == rects[:, 1].max())
+#     text2 = rects_m[text2_index[0][0]]
+#
+#     rects = np.array(rects)
+#     # plt.imshow(img_dilate, cmap=plt.gray())
+#     # plt.show()
+#     y_mean = rects[:, 1].mean()
+#     max_rect = rects[np.where(rects[:, 2] == rects[:, 2].max())]
+#     return np.array(img_correction), text1, text2
 
+# 身份证位置检测
+
+# def id_number_detect(img3,img1):
+#
+#     return locs, max_rect, gX, gY, gW, gH
+
+# 限定直线检测的区域
 def line_area(l1, lt_x, rt_x, lt_y, lb_y):
     levelline = []
     vertline = []
@@ -268,8 +512,7 @@ def line_area(l1, lt_x, rt_x, lt_y, lb_y):
     # 水平线限制区
     l_limit = []
     for i in range(0, len(levelline)):
-        if levelline[i][1] >= lt_y + 6 and levelline[i][1] <= lb_y + 12 and levelline[i][0] >= lt_x - 7 and \
-                levelline[i][0] <= rt_x + 6:
+        if levelline[i][1] >= lt_y + 6 and levelline[i][1] <= lb_y + 12 and levelline[i][0] >= lt_x - 7 and levelline[i][0] <= rt_x + 6:
             l_limit.append(levelline[i])
         i += 1
         if i > len(levelline) - 1:
@@ -279,8 +522,7 @@ def line_area(l1, lt_x, rt_x, lt_y, lb_y):
     # 垂直线限制区
     v_limit = []
     for j in range(0, len(vertline)):
-        if vertline[j][1] >= lt_y + 6 and vertline[j][1] <= lb_y + 12 and vertline[j][0] >= lt_x - 7 and vertline[j][
-            0] <= rt_x + 6:
+        if vertline[j][1] >= lt_y + 6 and vertline[j][1] <= lb_y + 12 and vertline[j][0] >= lt_x - 7 and vertline[j][0] <= rt_x + 6:
             v_limit.append(vertline[j])
         j += 1
         if j > len(vertline) - 1:
@@ -288,7 +530,7 @@ def line_area(l1, lt_x, rt_x, lt_y, lb_y):
     print('v_limit', v_limit)
     return l_limit, v_limit
 
-
+# 划分上下左右直线
 def line_group(l_limit, v_limit):
     # 上部的水平线
     # 下部的水平线
@@ -328,25 +570,25 @@ def line_group(l_limit, v_limit):
     print('right_vert', right_vert)  # 显示出右侧的垂直线
     return top_level, bottom_level, left_vert, right_vert
 
-
+# 进行直线拟合
 def fitline(lines):
     loc = []
     for line in lines:
-        x1, y1, x2, y2 = line
-        loc.append([x1, y1])
-        loc.append([x2, y2])
+        x1,y1,x2,y2 = line
+        loc.append([x1,y1])
+        loc.append([x2,y2])
 
     loc = np.array(loc)
     output = cv2.fitLine(loc, cv2.DIST_L2, 0, 0.01, 0.01)
     if output[1] != 1:
         k = (output[1] / output[0])
-        b = (output[3] - k * output[2])
+        b = (output[3] - k*output[2])
     else:
         k = 57.29
-        b = (output[3] - 57.29 * output[2])
-    return k, b
+        b = (output[3] - 57.29*output[2])
+    return k,b
 
-
+# 由拟合直线的斜率k和b计算四条直线的四个交点
 def find_cross_point1(topline, bottomline, leftline, rightline):
     # 通过斜率计算交点
     x1 = (topline[1] - leftline[1]) * 1.0 / (leftline[0] - topline[0])
@@ -365,45 +607,22 @@ def find_cross_point1(topline, bottomline, leftline, rightline):
     p = np.array(point)
     return x1, y1, x4, y4, p
 
-
+# grabcut图像切割
 def grabcut_correct(name, savename):
     img = cv2.imdecode(np.fromfile(name, dtype=np.uint8), -1)
-    # 返回人脸检测后的点集，旋转后的图像和图片的比率
+    #返回人脸检测后的点集，旋转后的图像和图片的比率
     shape, img1, img3, img4, img5, ratio = face_detect_rotation(img)
-    # locs为检测到的所有框，max_rect为检测到的长度最大的框（可能为身份证号），gX, gY, gW, gH为最大框的范围
-    locs, max_rect, gX, gY, gW, gH = id_number_detect(img3, img1)
+    #locs为检测到的所有框，max_rect为检测到的长度最大的框（可能为身份证号），gX, gY, gW, gH为最大框的范围
+    lt_x,lt_y,leng,wid = predict_rect(img1,img3,shape)
 
-    detect_id = []
-    cv2.rectangle(img3, (gX - 3, gY - 3), (gX + gW + 3, gY + gH + 3), (0, 0, 255), 2)
-    detect_id.append([gX - 3, gY - 3, gX + gW + 3, gY + gH + 3])
-    cv_show('rectangle', img3)
-    # 预估grabcut的rect值
-    if len(locs) == 0 or max_rect == 0:
-        leng = abs(11.5 * (shape[0][0] - shape[2][0]))
-    else:
-        leng = abs(1.92 * (detect_id[0][2] - detect_id[0][0]))
-    mid = (shape[1][1] + shape[3][1]) / 2.0
-    wid = abs(14 * (mid - shape[4][1]))
-    print('leng', leng)
-    print('wid', wid)  # 计算长度和宽度
-
-    rt_x = shape[4][0] * 1.0 + (leng / 4.0)
-    rt_y = shape[4][1] * 1.0 - (wid / 2.0)
-    rb_x = rt_x
-    rb_y = rt_y + wid
-    lt_x = rt_x - leng
-    lt_y = rt_y
-    lb_x = rt_x - leng
-    lb_y = rt_y + wid  # 计算出rect的四个点
-
-    # grabcut前景分割算法
+# grabcut前景分割算法
     # 创建了一个与加载图像同形状的掩膜
     # 创建了以0为填充对象的前景和背景模型
     mask = np.zeros(img3.shape[:2], np.uint8)
     bgdModel = np.zeros((1, 65), np.float64)
     fgdModel = np.zeros((1, 65), np.float64)
     # 标识出想要隔离对象的矩形，前景与背景要基于这个初始矩形留下的区域来决定
-    rect = (int(lt_x) - 5, int(lt_y) + 10, int(leng), int(wid))
+    rect = (int(lt_x)-5, int(lt_y)+10, int(leng), int(wid))
     print('rect', rect)
     # 进行GrabCut算法，并且用一个矩形进int(lt_y)行初始化模型,5表示算法的迭代次数
     cv2.grabCut(img3, mask, rect, bgdModel, fgdModel, 7, cv2.GC_INIT_WITH_RECT)
@@ -411,10 +630,9 @@ def grabcut_correct(name, savename):
     mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
     mask3 = mask2 * 255
     img = img3 * mask2[:, :, np.newaxis]
-
-    rectangle = cv2.rectangle(img.copy(), (int(lt_x) - 5, int(lt_y) + 10), (int(rb_x) - 5, int(rb_y) + 10), (0, 255, 0),
-                              2)
+    rectangle = cv2.rectangle(img.copy(), (int(lt_x)-5, int(lt_y) +10), (int(lt_x+leng)-5, int(lt_y+wid) + 10), (0, 255, 0),2)
     cv_show('rectangle', rectangle)
+    # canny = cv2.Canny(mask3,70,30)
     dilate = cv2.dilate(mask3, (3, 3), iterations=1)
     cv_show('dilate', dilate)
 
@@ -433,34 +651,31 @@ def grabcut_correct(name, savename):
     l1 = lines[:, 0, :]
     for x1, y1, x2, y2 in l1:  # lines[:,0,:]将直线压缩成二维图像，找出两个端点(降低维度)
         cv2.line(img3, (x1, y1), (x2, y2), (0, 255, 0), 1)
-    plt.figure()
-    ax = plt.subplot(111)
-    ax = plt.imshow(img3)
+    plt.imshow(img3, cmap=plt.gray())
     plt.show()
 
-    # 区域筛选后的水平线和垂直线
-    l_limit, v_limit = line_area(l1, lt_x, rt_x, lt_y, lb_y)
+    #区域筛选后的水平线和垂直线
+    l_limit, v_limit = line_area(l1, lt_x, lt_x+leng, lt_y, lt_y+wid)
 
-    # 对区域内的直线进行上下左右的分类
-    top_level, bottom_level, left_vert, right_vert = line_group(l_limit, v_limit)
+    #对区域内的直线进行上下左右的分类
+    top_level, bottom_level, left_vert, right_vert = line_group(l_limit,v_limit)
 
-    topline = fitline(top_level)  # 上一部分水平线拟合而成的斜率和b值
-    bottomline = fitline(bottom_level)  # 下一部分水平线拟合而成的斜率和b值
-    leftline = fitline(left_vert)  # 左侧垂直线的拟合而成的斜率和b值
-    rightline = fitline(right_vert)  # 右侧垂直线的拟合而成的斜率和b值
+    topline = fitline(top_level)#上一部分水平线拟合而成的斜率和b值
+    bottomline = fitline(bottom_level)#下一部分水平线拟合而成的斜率和b值
+    leftline = fitline(left_vert)#左侧垂直线的拟合而成的斜率和b值
+    rightline = fitline(right_vert)#右侧垂直线的拟合而成的斜率和b值
 
-    # 由斜率k和b计算上下左右拟合直线的交点
-    x1, y1, x4, y4, p = find_cross_point1(topline, bottomline, leftline, rightline)
+    #由斜率k和b计算上下左右拟合直线的交点
+    x1 ,y1, x4, y4, p = find_cross_point1(topline, bottomline, leftline, rightline)
 
-    rectangle1 = cv2.rectangle(img4.copy(), (int(x1), int(y1)), (int(x4), int(y4)), (0, 255, 0), 2)
-    cv_show('rectangle1', rectangle1)
+    rectangle1 = cv2.rectangle(img4.copy(), (int(x1), int(y1)), (int(x4), int(y4)), (0, 255, 0),2)
+    cv_show('rectangle1',rectangle1)
 
-    # 透视变换
-    warped = four_point_transform(img5, p.reshape(4, 2) * ratio)
-    warped1 = resize(warped, height=450)
+    #透视变换
+    warped = perspective_transformation(p.reshape(4, 2) * ratio,img5)
+    warped1 = resize(warped, width=500)
     cv_show("scanned", warped1)  # 透视变换
     cv2.imencode('.jpg', warped1, )[1].tofile(savename)
-
 
 if __name__ == "__main__":
     # input_dir = "C:/Users/Administrator/PycharmProjects/cread_ocr/test1/"
@@ -476,11 +691,14 @@ if __name__ == "__main__":
     #     save_name = "../output/" + img_name.split(".")[0] + ".jpg"
     #     single_process(path, save_name)  # 单张调试
 
-    for filename in os.listdir("test2/"):
+
+
+
+    for filename in os.listdir("C:/Users/Administrator/PycharmProjects/cread_ocr/test2/"):
         print(filename)
-        grabcut_correct("test2/" + filename, "front_cut_image/" + filename)
+        grabcut_correct("C:/Users/Administrator/PycharmProjects/cread_ocr/test2/" + filename, "C:/Users/Administrator/PycharmProjects/cread_ocr/result_3/" + filename)
     # #
-    # for filename in os.listdir("failed1/"):
+    # for filename in os.listdir("f ailed1/"):
     #     print(filename)
     #     grabcut("failed1/"+filename,"result/"+filename)
     #

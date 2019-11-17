@@ -129,10 +129,10 @@ def single_process(path, save_name):
             faceRects = np.array([[face_rect.left(), face_rect.top(), face_rect.right() - face_rect.left(),
                                    face_rect.bottom() - face_rect.top()]])
             max_face = faceRects[np.where(faceRects[:, 3] == faceRects[:, 3].max())]
-            try:
-                box_get_front_correction(copy.deepcopy(img), save_name, imgHeight, imgWidth, max_face)
-            except Exception as e:
-                print("正面定位失败！")
+            # try:
+            box_get_front_correction(copy.deepcopy(img), save_name, imgHeight, imgWidth, max_face)
+            # except Exception as e:
+            #     print("正面定位失败！")
         else:
             try:
                 box_get_back(img, save_name, imgHeight, imgWidth)
