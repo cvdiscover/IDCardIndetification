@@ -491,6 +491,31 @@ def predict_rect(gray, scr, shape):
 #     return locs, max_rect, gX, gY, gW, gH
 
 # 限定直线检测的区域
+
+# 寻找最大轮廓
+def find_max_contour(after_grabcut, img):
+    cnts = cv2.findContours(after_grabcut, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[1]
+    # 轮廓排序
+    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:1]  # 获取面积最大的一个轮廓
+    img2 = img.copy()
+    img2[:, :] = 0
+    cv2.drawContours(img2, cnts, -1, (255, 255, 255), 1)  # 获取并绘制轮廓
+    cv_show('outline', img2)
+    return img2
+
+def line_test(after_contours, scr):
+    # 对轮廓检测后的直线进行直线检测
+    minLineLength = 140
+    maxLineGap = 7
+    lines = cv2.HoughLinesP(after_contours, 1, np.pi / 360, 10, minLineLength, maxLineGap)  # 笔记记载了
+    l1 = lines[:, 0, :]
+    for x1, y1, x2, y2 in l1:  # lines[:,0,:]将直线压缩成二维图像，找出两个端点(降低维度)
+        cv2.line(scr, (x1, y1), (x2, y2), (0, 255, 0), 1)
+    plt.imshow(scr, cmap=plt.gray())
+    plt.show()
+    return l1
+
+# 限制直线检测后的直线数量
 def line_area(l1, lt_x, rt_x, lt_y, lb_y):
     levelline = []
     vertline = []
@@ -636,23 +661,11 @@ def grabcut_correct(name, savename):
     dilate = cv2.dilate(mask3, (3, 3), iterations=1)
     cv_show('dilate', dilate)
 
-    cnts = cv2.findContours(dilate, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[1]
-    # 轮廓排序
-    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:1]  # 获取面积最大的一个轮廓
-    img2 = mask3.copy()
-    img2[:, :] = 0
-    cv2.drawContours(img2, cnts, -1, (255, 255, 255), 1)  # 获取并绘制轮廓
-    cv_show('outline', img2)
+    # 寻找最大轮廓
+    img2 = find_max_contour(dilate, mask3)
 
-    # 对轮廓检测后的直线进行直线检测
-    minLineLength = 140
-    maxLineGap = 7
-    lines = cv2.HoughLinesP(img2, 1, np.pi / 360, 10, minLineLength, maxLineGap)  # 笔记记载了
-    l1 = lines[:, 0, :]
-    for x1, y1, x2, y2 in l1:  # lines[:,0,:]将直线压缩成二维图像，找出两个端点(降低维度)
-        cv2.line(img3, (x1, y1), (x2, y2), (0, 255, 0), 1)
-    plt.imshow(img3, cmap=plt.gray())
-    plt.show()
+    # 对最大轮廓进行直线检测
+    l1 = line_test(img2, img3)
 
     #区域筛选后的水平线和垂直线
     l_limit, v_limit = line_area(l1, lt_x, lt_x+leng, lt_y, lt_y+wid)
@@ -690,7 +703,7 @@ if __name__ == "__main__":
     #     path = path_without_img_name + img_name
     #     save_name = "../output/" + img_name.split(".")[0] + ".jpg"
     #     single_process(path, save_name)  # 单张调试
-
+    
 
 
 
