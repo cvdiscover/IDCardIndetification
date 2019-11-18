@@ -793,7 +793,6 @@ def len_judge(img, dst):
             (dst[(i + 1) % 4][0][0] - dst[i % 4][0][0]) ** 2 + (dst[(i + 1) % 4][0][1] - dst[i % 4][0][1]) ** 2)
         if dst_len > len_max or dst_len < len_min:
             return False
-        else:
-            return True
+    return True
 
 

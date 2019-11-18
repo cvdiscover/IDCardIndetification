@@ -154,7 +154,7 @@ def project(img_binary, orientation=0, is_show = 0):
     图片投影
     :param img_binary: 二值图片
     :param orientation: 投影方向 0：水平投影  1：垂直投影
-    :return:
+    :return:水平方向角點
     """
     img_binary = np.array(img_binary)
     (h, w) = img_binary.shape  # 返回高和宽

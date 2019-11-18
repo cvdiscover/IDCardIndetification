@@ -41,10 +41,10 @@ def batch_process(input_dir="images/", output_dir="output/"):
         #     continue
         path = input_dir + filename
         save_name = output_dir + filename
-        try:
-            single_process(path, save_name)
-        except Exception as e:
-            print(e)
+        # try:
+        single_process(path, save_name)
+        # except Exception as e:
+        #     print(e)
 
 
 def single_process(path, save_name):
@@ -92,8 +92,9 @@ def single_process(path, save_name):
             is_need_correct_skew = check_location(img, regions)
         else:
             if not pre_fitline_get_back(img, save_name):
-                box_get_back(img, save_name, imgHeight, imgWidth)
-            # is_need_correct_skew = 1
+                is_need_correct_skew = 1
+                # box_get_back(img, save_name, imgHeight, imgWidth)
+
     except Exception as e:
         print("初次定位出错，需要进行纠偏！")
         is_need_correct_skew = 1
@@ -134,11 +135,11 @@ def single_process(path, save_name):
             except Exception as e:
                 print("正面定位失败！")
         else:
-            try:
-                if not pre_fitline_get_back(img, save_name):
+            # try:
+                # if not pre_fitline_get_back(img, save_name):
                     box_get_back(img, save_name, imgHeight, imgWidth)
-            except Exception as e:
-                 print("反面定位失败！")
+            # except Exception as e:
+            #      print("反面定位失败！")
             #     pass
 
         locate_time = datetime.now()
