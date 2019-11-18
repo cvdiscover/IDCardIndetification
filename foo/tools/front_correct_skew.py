@@ -633,9 +633,9 @@ def get_border_by_grabcut(img, predict_border_lines):
 
     fill = cv2.rectangle(img_binary.copy(), (0, 0), (img.shape[1], img.shape[0]), (0, 0, 0), -1)  # 将图片涂黑
     fill = cv2.drawContours(fill.copy(), contours, 0, (255, 255, 255), -1)  # 将最大轮廓涂白
-
-    plt.imshow(mask2, cmap=plt.gray())
-    plt.show()
+    if is_debug == 1:
+        plt.imshow(mask2, cmap=plt.gray())
+        plt.show()
     x = cv2.Sobel(fill, cv2.CV_16S, 1, 0, ksize=3)
     y = cv2.Sobel(fill, cv2.CV_16S, 0, 1, ksize=3)
 
@@ -1507,8 +1507,9 @@ def front_correct_skew(img):
         for line in predict_border_lines:
             x1, y1, x2, y2 = line
             cv2.line(img2, (x1, y1), (x2, y2), (255, 0, 0), 5)
-        plt.imshow(img2)
-        plt.show()
+        if is_debug ==1:
+            plt.imshow(img2)
+            plt.show()
     # cv2.imshow("pred_line", img2)
     # cv2.waitKey(0)
 

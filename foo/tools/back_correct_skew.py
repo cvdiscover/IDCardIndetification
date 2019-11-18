@@ -377,9 +377,9 @@ if __name__ == '__main__':
         cv2.line(img, b_r_point, t_r_point, (255, 0, 0), 3)
         cv2.line(img, b_r_point, b_l_point, (255, 0, 0), 3)
         cv2.line(img, b_l_point, t_l_point, (255, 0, 0), 3)
-
-        plt.imshow(img)
-        plt.show()
+        if is_debug ==1:
+            plt.imshow(img)
+            plt.show()
 
         # return  img
         # 透视变换
@@ -393,9 +393,9 @@ if __name__ == '__main__':
         M = cv2.getPerspectiveTransform(pts1, pts2)
         # 进行透视变换
         dst = cv2.warpPerspective(img, M, (width, height))
-
-        plt.imshow(dst)
-        plt.show()
+        if is_debug == 1:
+            plt.imshow(dst)
+            plt.show()
         # print("radon time:",datetime.now() - start_time)
         # img_corner = get_corner(img)
 

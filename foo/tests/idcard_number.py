@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import dlib
 from PIL import Image
 from foo.tools.front_correct_skew import correct_skew, resize
+from foo.tools.config import *
 
 # 加载人脸检测模型
 classfier = cv2.CascadeClassifier("D:/python/cascades/haarcascade_frontalface_alt2.xml")
@@ -93,9 +94,9 @@ def box_get_front_correction(img,imgHeight, imgWidth, face_rect):
     photo_y2 = face_rect[0][1] + face_rect[0][3] + 60
     photo_cut = img[photo_y1:photo_y2, photo_x1:photo_x2]
     img=cv2.rectangle(img,(photo_x1,photo_y1),(photo_x2,photo_y2),(0,0,255),2)
-    plt.imshow(img,cmap=plt.gray())
-    #plt.imshow(photo_cut, cmap=plt.gray())
-    plt.show()
+    if is_debug == 1:
+        plt.imshow(img,cmap=plt.gray())
+        plt.show()
     return photo_x1,photo_x2,photo_y1,photo_y2
 
 img=cv2.imread('D://datasets//sfz_problem//20.jpeg')
