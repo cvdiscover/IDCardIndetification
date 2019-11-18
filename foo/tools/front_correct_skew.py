@@ -197,7 +197,7 @@ def get_id_by_corner(img, max_face):
     img_mark_gray_dilate = cv2.dilate(img_mark_gray, elment, iterations=1)
     # plt.imshow(img_mark_gray_dilate, cmap=plt.gray())
     # plt.show()
-    contours, _ = cv2.findContours(img_mark_gray_dilate, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, _ = cv2.findContours(img_mark_gray_dilate, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
 
     # 2. 筛选那些面积小的
     contours_sorted = sorted(contours, key=cv2.contourArea, reverse=True)
@@ -215,7 +215,7 @@ def get_id_by_corner(img, max_face):
         if (rect[0][1] < (max_face[1] + 1.5 * max_face[3])):
             continue
         if (rect[2] < -45 and rect[1][1] / rect[1][0] < 5) or (-45 < rect[2] < 0 and rect[1][0] / rect[1][1] < 5):
-            print(rect[2], rect[1][0], rect[1][1])
+
             continue
         if -45 < rect[2] <= 0:
             regions_1.append(rect)
@@ -259,9 +259,9 @@ def get_border_by_sobel(img):
     img3 = cv2.GaussianBlur(img, (5, 5), 0)
     img_gray = cv2.cvtColor(img3, cv2.COLOR_BGR2GRAY)
     _, img_binary = cv2.threshold(img_gray, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY_INV)
-    contours, hierarchy = cv2.findContours(img_binary, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
+    _, contours, hierarchy = cv2.findContours(img_binary, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
     # print(len(contours))
-    contours = sorted(contours, key=cv2.contourArea, reverse=True)  # 按面积排序
+    _, contours = sorted(contours, key=cv2.contourArea, reverse=True)  # 按面积排序
 
     fill = cv2.rectangle(img_binary.copy(), (0, 0), (img.shape[1], img.shape[0]), (0, 0, 0), -1)  # 将图片涂黑
     fill = cv2.drawContours(fill.copy(), contours, 0, (255, 255, 255), -1)  # 将最大轮廓涂白
@@ -493,7 +493,7 @@ def get_border_gradient(img):
     if is_debug == 1:
         plt.imshow(dst_binary, cmap=plt.gray())
         plt.show()
-    contours, hierarchy = cv2.findContours(dst_binary.copy(), cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
+    _, contours, hierarchy = cv2.findContours(dst_binary.copy(), cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
 
     contours = sorted(contours, key=cv2.contourArea, reverse=True)  # 按面积排序
 
@@ -540,7 +540,7 @@ def get_border_by_binary_max_contour(img):
     _, img_binary = cv2.threshold(img_gray, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY)
     # plt.imshow(img_binary, cmap=plt.gray())
     # plt.show()
-    contours, hierarchy = cv2.findContours(img_binary.copy(), cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
+    _, contours, hierarchy = cv2.findContours(img_binary.copy(), cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
     contours = sorted(contours, key=cv2.contourArea, reverse=True)  # 按面积排序
 
     fill = cv2.rectangle(img_binary.copy(), (0, 0), (img.shape[1], img.shape[0]), (0, 0, 0), -1)  # 将图片涂黑
@@ -628,7 +628,7 @@ def get_border_by_grabcut(img, predict_border_lines):
     img_show = img * mask2[:, :, np.newaxis]
 
     img_binary = mask2 * 255
-    contours, hierarchy = cv2.findContours(img_binary.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
+    _, contours, hierarchy = cv2.findContours(img_binary.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
     contours = sorted(contours, key=cv2.contourArea, reverse=True)  # 按面积排序
 
     fill = cv2.rectangle(img_binary.copy(), (0, 0), (img.shape[1], img.shape[0]), (0, 0, 0), -1)  # 将图片涂黑

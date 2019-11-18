@@ -7,9 +7,13 @@ pwd = os.getcwd()
 # 到右边缘：607/129
 # 到上边缘：24/129
 # 其中向原点偏移为正向（上左）其余为反向（下右）
-guohui_direct = "../tools/guohui_direct.png"  # C:/Users/Alexi/Desktop/IDCard_Identification/
+
+# resp = os.path.relpath('C:/Users/Alexi/Desktop/IDCard_Identification/foo/tools/guohui_direct.png')
+#     print(resp)  # 以绝对路径找相对路径
+
+guohui_direct = "tools/guohui_direct.png"  # C:/Users/Alexi/Desktop/IDCard_Identification/
 proportion = [32/129, -375/129, -627/129, 30/129]
-is_debug = 1
+is_debug = 0
 is_show_mark = 0
 is_show_id_rect = 0
 is_show_id_binary = 0

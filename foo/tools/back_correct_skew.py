@@ -34,7 +34,6 @@ def extract_peek_ranges_from_array(array_vals, minimun_val=10, minimun_range=2):
         elif val < minimun_val and start_i is None:
             pass
         else:
-            print(val , minimun_val , start_i )
             raise ValueError("cannot parse this case...")
     return peek_ranges
 
@@ -162,7 +161,6 @@ def correct_image(img):
     # print("radon time:",datetime.now() - start_time)
     horizontal_sum = project(img_mark, orientation=0, is_show=1)
     peek_ranges = extract_peek_ranges_from_array(horizontal_sum)
-    print(peek_ranges)
     # img_correct = correct_image(img)
     img_mblur = cv2.medianBlur(img_mark, 1)
 
@@ -205,15 +203,6 @@ def correct_image(img):
     y_mean = rects[:, 1].mean()
     max_rect = rects[np.where(rects[:, 2] == rects[:, 2].max())]
 
-    # if max_rect[0, 1] < y_mean:
-    #     img_correction = Image.fromarray(img_correction)
-    #     img_correction = np.array(img_correction.rotate(180, expand=True))
-    # print(max_rect, y_mean)
-    # rects_y = sorted(rects, key=lambda x: x[1], reverse=False)
-    #
-    # print(rects_y)
-    # plt.imshow(img_correction, cmap=plt.gray())
-    # plt.show()
     return np.array(img_correction), text1, text2
 
 
@@ -333,7 +322,6 @@ def back_correct_skew(img):
             if d < 70 and d < d_r_min:
                 d_r_min = d
                 right_line = line
-    print(top_line, bottom_line, left_line, right_line)
     return np.array(img), top_line, bottom_line, left_line, right_line
 
 # cv2.imencode('.jpg', img_copy)[1].tofile(str(save_name) + ".jpg")

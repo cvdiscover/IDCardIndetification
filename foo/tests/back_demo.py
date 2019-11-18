@@ -23,8 +23,6 @@ def find_information(result, img):
         plt.hist(result.ravel(), 256, [0, 256])
         plt.show()
 
-
-
     # 阈值设置为80可以有效地去除大部分边框和国徽
     # ret, thresh = cv2.threshold(cv2.cvtColor(result, cv2.COLOR_BGR2GRAY), 0, 255, cv2.THRESH_BINARY | cv2.THRESH_TRIANGLE)
     thresh = cv2.adaptiveThreshold(cv2.cvtColor(result, cv2.COLOR_BGR2GRAY), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 25, 5)
@@ -146,7 +144,7 @@ def find_information_bymark(result, img):
         cv2.imshow('morphologyEx2', morphologyEx)
         cv2.waitKey(0)
 
-    contours, hair = cv2.findContours(morphologyEx, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, hair = cv2.findContours(morphologyEx, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     # over = cv2.drawContours(result, contours, -1, (255, 0, 0), 1)
     # cv2.imshow("counters", over)
@@ -479,9 +477,8 @@ def fit_line(image, points, ori):
                 cv2.line(result, (x1, y1), (x2, y2), (0, 255, 255), 2)
     if is_debug == 1:
         for i in range(4):
-            print(edge[i])
-        cv2.imshow("fitline123", result)
-        cv2.waitKey(0)
+            cv2.imshow("fitline123", result)
+            cv2.waitKey(0)
 
     if len(edge[0]) is 0 or len(edge[1]) is 0 or len(edge[2]) is 0 or len(edge[3]) is 0:
         print("未能拟合出四条边缘 改为使用预估位置")
