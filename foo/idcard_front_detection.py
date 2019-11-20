@@ -66,9 +66,10 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     photo_y2 = face_rect[0][1] + face_rect[0][3] + 60
     photo_cut = img[photo_y1:photo_y2, photo_x1:photo_x2]
     img=cv2.rectangle(img,(photo_x1,photo_y1),(photo_x2,photo_y2),(0,0,255),2)
-    plt.imshow(img,cmap=plt.gray())
-    #plt.imshow(photo_cut, cmap=plt.gray())
-    plt.show()
+    if is_debug ==1:
+        plt.imshow(img,cmap=plt.gray())
+        #plt.imshow(photo_cut, cmap=plt.gray())
+        plt.show()
     photo_region = get_photo_position(photo_cut)
     photo_region[0][0] += photo_x1
     photo_region[0][1] += photo_y1
@@ -294,7 +295,8 @@ def get_photo_position(img):
     #img_erode = cv2.erode(img, erode_elment, iterations=1)
 
 
-    res,contours,hi = cv2.findContours(img_dilate, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
+    # res,contours,hi = cv2.findContours(img_dilate, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, _ = cv2.findContours(img_dilate, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
     contours_sorted = sorted(contours, key=cv2.contourArea, reverse=True)
 
     cnt_1 = contours_sorted[0]
@@ -364,7 +366,7 @@ def complete_box(regions):
             regions[6][i, 0] = address_x
     return regions
 
-
+#获取框内文字信息
 def get_regions(img, scale, is_address=0, is_name=0, is_date=0, is_front = 1, is_consider_color = 1):
     """
         对单块区域处理后，获取文文本位置
@@ -430,7 +432,7 @@ def get_regions(img, scale, is_address=0, is_name=0, is_date=0, is_front = 1, is
     # plt.show()
     return np.array(text_region)
 
-
+# 寻找文字区域
 def find_word_regions(img, is_address=0, is_name=0, is_date=0):
     """
        获取一个二值图片中的文本位置
@@ -442,7 +444,7 @@ def find_word_regions(img, is_address=0, is_name=0, is_date=0):
     # 1. 查找轮廓
     # plt.imshow(img)
     # plt.show()
-    contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # 2. 筛选那些面积小的
     contours_sorted = sorted(contours, key=cv2.contourArea, reverse=True)[:10]

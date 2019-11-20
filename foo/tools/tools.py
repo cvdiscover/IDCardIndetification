@@ -154,7 +154,7 @@ def project(img_binary, orientation=0, is_show = 0):
     图片投影
     :param img_binary: 二值图片
     :param orientation: 投影方向 0：水平投影  1：垂直投影
-    :return:
+    :return:水平方向角點
     """
     img_binary = np.array(img_binary)
     (h, w) = img_binary.shape  # 返回高和宽
@@ -207,7 +207,7 @@ def check_idnumber(img):
     # plt.show()
     horizonal_number = project(img_binary, 0)
     best_center = get_best_region(horizonal_number)
-    if  best_center > 40 or best_center < 12:
+    if best_center > 40 or best_center < 12:
         return 1
     else:
         return 0
@@ -268,3 +268,27 @@ def resize(image, width=None, height=None, inter=cv2.INTER_AREA):  #
     # print(dim)
     resized = cv2.resize(image, dim, interpolation=inter)  # interpo;ation为插值方法，这里选用的是
     return resized
+
+
+def line_length(point1, point2):
+    x1, y1 = point1
+    x2, y2 = point2
+    length = math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+    return length
+
+
+def basic_demo(image):
+    """
+        基本操作
+        :param image: 输入图像
+        :return: 双边滤波后的图像
+        """
+    # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    img = cv2.bilateralFilter(image, 0, 100, 15)
+    # cv2.imshow("bi_demo", img)
+    # cv2.waitKey(0)
+
+    edges = cv2.Canny(img, 10, 150, 20)  # 50是最小阈值,150是最大阈值
+    # cv2.imshow('Canny', edges)
+    # cv2.waitKey(0)
+    return edges

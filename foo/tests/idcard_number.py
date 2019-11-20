@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import dlib
 from PIL import Image
 from foo.tools.front_correct_skew import correct_skew, resize
+from foo.tools.config import *
 
 # 加载人脸检测模型
 classfier = cv2.CascadeClassifier("D:/python/cascades/haarcascade_frontalface_alt2.xml")
@@ -93,19 +94,19 @@ def box_get_front_correction(img,imgHeight, imgWidth, face_rect):
     photo_y2 = face_rect[0][1] + face_rect[0][3] + 60
     photo_cut = img[photo_y1:photo_y2, photo_x1:photo_x2]
     img=cv2.rectangle(img,(photo_x1,photo_y1),(photo_x2,photo_y2),(0,0,255),2)
-    plt.imshow(img,cmap=plt.gray())
-    #plt.imshow(photo_cut, cmap=plt.gray())
-    plt.show()
+    if is_debug == 1:
+        plt.imshow(img,cmap=plt.gray())
+        plt.show()
     return photo_x1,photo_x2,photo_y1,photo_y2
 
-img=cv2.imread('D://datasets//sfz_problem//11.jpeg')
+img=cv2.imread('D://datasets//sfz_problem//20.jpeg')
 img = resize(img.copy(), width=500)
 img = face_detect(img)
 faces = detector(img, 1)
 if len(img.shape) == 3:
     grey = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2GRAY)
 else:
-    gray = np.array(img)
+    grey = np.array(img)
 
 faces_cv = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
 if len(faces) > 0 and len(faces_cv) > 0:
@@ -124,12 +125,12 @@ if len(faceRects) > 0:
     #     copy.deepcopy(img), save_name, imgHeight, imgWidth)
     max_face = faceRects[np.where(faceRects[:, 3] == faceRects[:, 3].max())]
     (x1,x2,y1,y2) = box_get_front_correction(
-    img.copy(), imgHeight, imgWidth, max_face)
+        img.copy(), imgHeight, imgWidth, max_face)
     print(x1, x2, y1, y2)
 
 gray=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-rectKernel=cv2.getStructuringElement(cv2.MORPH_RECT,(15,15))
-sqlKernel=cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+rectKernel=cv2.getStructuringElement(cv2.MORPH_RECT,(9,9))
+sqlKernel=cv2.getStructuringElement(cv2.MORPH_RECT,(15,15))
 
 tophat=cv2.morphologyEx(gray,cv2.MORPH_TOPHAT,rectKernel)
 cv_show('tophat',tophat)
@@ -145,10 +146,10 @@ cv_show('gradX',gradX)
 thresh=cv2.threshold(gradX,0,255,cv2.THRESH_BINARY|cv2.THRESH_OTSU)[1]
 cv_show('thresh',thresh)
 
-thresh=cv2.morphologyEx(thresh,cv2.MORPH_CLOSE,rectKernel)
+thresh1=cv2.morphologyEx(thresh,cv2.MORPH_CLOSE,sqlKernel)
 cv_show('thresh',thresh)
 
-threshCnts=cv2.findContours(thresh.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
+threshCnts=cv2.findContours(thresh1.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
 cnts=threshCnts
 
 cur_img=img.copy()
@@ -159,11 +160,12 @@ locs=[]
 #遍历轮廓
 for (i,c) in enumerate(cnts):
     (x,y,w,h)=cv2.boundingRect(c)
+    print(w,h)
     ar=w/float(h)
 
     #选择合适的区域，根据实际任务来，这里的基本上都是四个数字一组
-    if ar>10 and ar<40:
-        if (w>200 and w<400) and (h>10 and h<20):
+    if ar>8 and ar<30:
+        if (w>100 and w<400) :#and (h>10 and h<20):
             #把符合的留下来
             locs.append((x,y,w,h))
 
@@ -177,4 +179,17 @@ for (i,(gX,gY,gW,gH)) in enumerate(locs):
     print((gX-5,gY-5),(gX+gW+5,gY+gH+5))
 
 cv2.imshow('image',img)
+cv2.waitKey(0)
+w=gW+10
+h=gH+10
+print(w,h)
+long=2*w
+#canny=cv2.Canny(gray,50, 150, apertureSize=3)
+#cv_show('canny',canny)
+#lines = cv2.HoughLinesP(canny, 1,np.pi/180, 80, long, 5)
+#print(lines)
+#for x1, y1, x2, y2 in lines[0]:
+#    cv2.line(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+cv2.imshow('result', img)
 cv2.waitKey(0)

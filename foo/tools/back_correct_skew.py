@@ -34,7 +34,6 @@ def extract_peek_ranges_from_array(array_vals, minimun_val=10, minimun_range=2):
         elif val < minimun_val and start_i is None:
             pass
         else:
-            print(val , minimun_val , start_i )
             raise ValueError("cannot parse this case...")
     return peek_ranges
 
@@ -160,18 +159,26 @@ def correct_image(img):
     from foo.tools.tools import project
 
     # print("radon time:",datetime.now() - start_time)
+
     horizontal_sum = project(img_mark, orientation=0, is_show=1)
-    peek_ranges = extract_peek_ranges_from_array(horizontal_sum)
+    i = 0
+    sum = 0
+    for hor in horizontal_sum:
+        if hor > 0:
+            i += 1
+            sum += hor
+    minimun_val = int(sum/i/1.5)
+    # print(i, sum, minimun_val)
+    peek_ranges = extract_peek_ranges_from_array(horizontal_sum, minimun_val)
     print(peek_ranges)
+
     # img_correct = correct_image(img)
     img_mblur = cv2.medianBlur(img_mark, 1)
-
 
     elment = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 2))
     img_dilate = cv2.dilate(img_mblur, elment, iterations=2)
 
-
-    contours, _ = cv2.findContours(img_dilate, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, _ = cv2.findContours(img_dilate, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     rects = []
     rects_m = []
     img_filter = img_dilate.copy()
@@ -207,15 +214,6 @@ def correct_image(img):
     y_mean = rects[:, 1].mean()
     max_rect = rects[np.where(rects[:, 2] == rects[:, 2].max())]
 
-    # if max_rect[0, 1] < y_mean:
-    #     img_correction = Image.fromarray(img_correction)
-    #     img_correction = np.array(img_correction.rotate(180, expand=True))
-    # print(max_rect, y_mean)
-    # rects_y = sorted(rects, key=lambda x: x[1], reverse=False)
-    #
-    # print(rects_y)
-    # plt.imshow(img_correction, cmap=plt.gray())
-    # plt.show()
     return np.array(img_correction), text1, text2
 
 
@@ -335,89 +333,85 @@ def back_correct_skew(img):
             if d < 70 and d < d_r_min:
                 d_r_min = d
                 right_line = line
-    print(top_line, bottom_line, left_line, right_line)
     return np.array(img), top_line, bottom_line, left_line, right_line
 
 # cv2.imencode('.jpg', img_copy)[1].tofile(str(save_name) + ".jpg")
 
 # if __name__ == '__main__':
-
-
-if __name__ == '__main__':
-    # from foo.tools.front_correct_skew import resize
-    is_batch = 0
-    if is_batch:
-        input_dir = "F:/idcard/HR/HR/"
-        output_dir = "F:/idcard/HR/output4/"
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        for filename in os.listdir(input_dir):
-            if len(filename.split(".")) < 2:
-                continue
-            print(filename)
-            path = input_dir + filename
-            # 读取图片
-            img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), -1)
-            img = resize(img.copy(), width=500)
-            correct_image(img)
-    else:
-        path = "F:/idcard/sfz/sfz_part/027e7bfd-958b-448e-a0f0-a55d5815df98.jpeg"
-        img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), -1)
-        img = resize(img.copy(), width=500)
-
-        #test(img)
-        # start_time = datetime.now()
-        #correct_image(img)
-        img, top, bottom, left, right = back_correct_skew(img)
-
-        # cv2.line(img, (top[0], top[1]), (top[2], top[3]), (0, 0, 255), 2)
-        # cv2.line(img, (top[0], top[1]), (top[2], top[3]), (0, 0, 255), 2)
-        # cv2.line(img, (left[0], left[1]), (left[2], left[3]), (0, 0, 255), 2)
-        # cv2.line(img, (right[0], right[1]), (right[2], right[3]), (0, 0, 255), 2)
-        # plt.imshow(img)
-        # plt.show()
-
-        from foo.tools.front_correct_skew import find_cross_point
-        t_l_point = find_cross_point(top, left)
-        t_r_point = find_cross_point(top, right)
-        b_l_point = find_cross_point(bottom, left)
-        b_r_point = find_cross_point(bottom, right)
-        # 用红色画出四个顶点
-        for point in t_l_point, t_r_point, b_l_point, b_r_point:
-            cv2.circle(img, point, 8, (0, 0, 255), 2)
-
-        # 用蓝色画出四条边
-        cv2.line(img, t_l_point, t_r_point, (255, 0, 0), 3)
-        cv2.line(img, b_r_point, t_r_point, (255, 0, 0), 3)
-        cv2.line(img, b_r_point, b_l_point, (255, 0, 0), 3)
-        cv2.line(img, b_l_point, t_l_point, (255, 0, 0), 3)
-
-        plt.imshow(img)
-        plt.show()
-
-        # return  img
-        # 透视变换
-        width = 500  # 生成图的宽
-        height = 316  # 生成图的高
-        # 原图中的四个角点
-        pts1 = np.float32([list(t_l_point), list(t_r_point), list(b_l_point), list(b_r_point)])
-        # 变换后分别在左上、右上、左下、右下四个点
-        pts2 = np.float32([[0, 0], [width, 0], [0, height], [width, height]])
-        # 生成透视变换矩阵
-        M = cv2.getPerspectiveTransform(pts1, pts2)
-        # 进行透视变换
-        dst = cv2.warpPerspective(img, M, (width, height))
-
-        plt.imshow(dst)
-        plt.show()
-        # print("radon time:",datetime.now() - start_time)
-        # img_corner = get_corner(img)
-
-        # radon_image = transform.radon(img_corner)
-
-        # max_index = np.where(radon_image[:, :] == radon_image.max())
-        # print(np.where(radon_image[:,:] == radon_image.max()))
-        # img_corner_ = Image.fromarray(img_corner)
-        # im_rotate = img_corner_.rotate( 90 -max_index[1])
-        # plt.imshow(im_rotate, cmap=plt.gray())
-        # plt.show()
+#     # from foo.tools.front_correct_skew import resize
+#     is_batch = 0
+#     if is_batch:
+#         input_dir = "F:/idcard/HR/HR/"
+#         output_dir = "F:/idcard/HR/output4/"
+#         if not os.path.exists(output_dir):
+#             os.makedirs(output_dir)
+#         for filename in os.listdir(input_dir):
+#             if len(filename.split(".")) < 2:
+#                 continue
+#             print(filename)
+#             path = input_dir + filename
+#             # 读取图片
+#             img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), -1)
+#             img = resize(img.copy(), width=500)
+#             correct_image(img)
+#     else:
+#         path = "F:/idcard/sfz/sfz_part/027e7bfd-958b-448e-a0f0-a55d5815df98.jpeg"
+#         img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), -1)
+#         img = resize(img.copy(), width=500)
+#
+#         #test(img)
+#         # start_time = datetime.now()
+#         #correct_image(img)
+#         img, top, bottom, left, right = back_correct_skew(img)
+#
+#         # cv2.line(img, (top[0], top[1]), (top[2], top[3]), (0, 0, 255), 2)
+#         # cv2.line(img, (top[0], top[1]), (top[2], top[3]), (0, 0, 255), 2)
+#         # cv2.line(img, (left[0], left[1]), (left[2], left[3]), (0, 0, 255), 2)
+#         # cv2.line(img, (right[0], right[1]), (right[2], right[3]), (0, 0, 255), 2)
+#         # plt.imshow(img)
+#         # plt.show()
+#
+#         from foo.tools.front_correct_skew import find_cross_point
+#         t_l_point = find_cross_point(top, left)
+#         t_r_point = find_cross_point(top, right)
+#         b_l_point = find_cross_point(bottom, left)
+#         b_r_point = find_cross_point(bottom, right)
+#         # 用红色画出四个顶点
+#         for point in t_l_point, t_r_point, b_l_point, b_r_point:
+#             cv2.circle(img, point, 8, (0, 0, 255), 2)
+#
+#         # 用蓝色画出四条边
+#         cv2.line(img, t_l_point, t_r_point, (255, 0, 0), 3)
+#         cv2.line(img, b_r_point, t_r_point, (255, 0, 0), 3)
+#         cv2.line(img, b_r_point, b_l_point, (255, 0, 0), 3)
+#         cv2.line(img, b_l_point, t_l_point, (255, 0, 0), 3)
+#         if is_debug ==1:
+#             plt.imshow(img)
+#             plt.show()
+#
+#         # return  img
+#         # 透视变换
+#         width = 500  # 生成图的宽
+#         height = 316  # 生成图的高
+#         # 原图中的四个角点
+#         pts1 = np.float32([list(t_l_point), list(t_r_point), list(b_l_point), list(b_r_point)])
+#         # 变换后分别在左上、右上、左下、右下四个点
+#         pts2 = np.float32([[0, 0], [width, 0], [0, height], [width, height]])
+#         # 生成透视变换矩阵
+#         M = cv2.getPerspectiveTransform(pts1, pts2)
+#         # 进行透视变换
+#         dst = cv2.warpPerspective(img, M, (width, height))
+#         if is_debug == 1:
+#             plt.imshow(dst)
+#             plt.show()
+#         # print("radon time:",datetime.now() - start_time)
+#         # img_corner = get_corner(img)
+#
+#         # radon_image = transform.radon(img_corner)
+#
+#         # max_index = np.where(radon_image[:, :] == radon_image.max())
+#         # print(np.where(radon_image[:,:] == radon_image.max()))
+#         # img_corner_ = Image.fromarray(img_corner)
+#         # im_rotate = img_corner_.rotate( 90 -max_index[1])
+#         # plt.imshow(im_rotate, cmap=plt.gray())
+#         # plt.show()

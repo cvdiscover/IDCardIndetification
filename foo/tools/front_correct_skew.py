@@ -197,7 +197,7 @@ def get_id_by_corner(img, max_face):
     img_mark_gray_dilate = cv2.dilate(img_mark_gray, elment, iterations=1)
     # plt.imshow(img_mark_gray_dilate, cmap=plt.gray())
     # plt.show()
-    contours, _ = cv2.findContours(img_mark_gray_dilate, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, _ = cv2.findContours(img_mark_gray_dilate, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
 
     # 2. 筛选那些面积小的
     contours_sorted = sorted(contours, key=cv2.contourArea, reverse=True)
@@ -215,7 +215,7 @@ def get_id_by_corner(img, max_face):
         if (rect[0][1] < (max_face[1] + 1.5 * max_face[3])):
             continue
         if (rect[2] < -45 and rect[1][1] / rect[1][0] < 5) or (-45 < rect[2] < 0 and rect[1][0] / rect[1][1] < 5):
-            print(rect[2], rect[1][0], rect[1][1])
+
             continue
         if -45 < rect[2] <= 0:
             regions_1.append(rect)
@@ -259,9 +259,9 @@ def get_border_by_sobel(img):
     img3 = cv2.GaussianBlur(img, (5, 5), 0)
     img_gray = cv2.cvtColor(img3, cv2.COLOR_BGR2GRAY)
     _, img_binary = cv2.threshold(img_gray, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY_INV)
-    contours, hierarchy = cv2.findContours(img_binary, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
+    _, contours, hierarchy = cv2.findContours(img_binary, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
     # print(len(contours))
-    contours = sorted(contours, key=cv2.contourArea, reverse=True)  # 按面积排序
+    _, contours = sorted(contours, key=cv2.contourArea, reverse=True)  # 按面积排序
 
     fill = cv2.rectangle(img_binary.copy(), (0, 0), (img.shape[1], img.shape[0]), (0, 0, 0), -1)  # 将图片涂黑
     fill = cv2.drawContours(fill.copy(), contours, 0, (255, 255, 255), -1)  # 将最大轮廓涂白
@@ -493,7 +493,7 @@ def get_border_gradient(img):
     if is_debug == 1:
         plt.imshow(dst_binary, cmap=plt.gray())
         plt.show()
-    contours, hierarchy = cv2.findContours(dst_binary.copy(), cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
+    _, contours, hierarchy = cv2.findContours(dst_binary.copy(), cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
 
     contours = sorted(contours, key=cv2.contourArea, reverse=True)  # 按面积排序
 
@@ -540,7 +540,7 @@ def get_border_by_binary_max_contour(img):
     _, img_binary = cv2.threshold(img_gray, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY)
     # plt.imshow(img_binary, cmap=plt.gray())
     # plt.show()
-    contours, hierarchy = cv2.findContours(img_binary.copy(), cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
+    _, contours, hierarchy = cv2.findContours(img_binary.copy(), cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
     contours = sorted(contours, key=cv2.contourArea, reverse=True)  # 按面积排序
 
     fill = cv2.rectangle(img_binary.copy(), (0, 0), (img.shape[1], img.shape[0]), (0, 0, 0), -1)  # 将图片涂黑
@@ -628,14 +628,14 @@ def get_border_by_grabcut(img, predict_border_lines):
     img_show = img * mask2[:, :, np.newaxis]
 
     img_binary = mask2 * 255
-    contours, hierarchy = cv2.findContours(img_binary.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
+    _, contours, hierarchy = cv2.findContours(img_binary.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
     contours = sorted(contours, key=cv2.contourArea, reverse=True)  # 按面积排序
 
     fill = cv2.rectangle(img_binary.copy(), (0, 0), (img.shape[1], img.shape[0]), (0, 0, 0), -1)  # 将图片涂黑
     fill = cv2.drawContours(fill.copy(), contours, 0, (255, 255, 255), -1)  # 将最大轮廓涂白
-
-    plt.imshow(mask2, cmap=plt.gray())
-    plt.show()
+    if is_debug == 1:
+        plt.imshow(mask2, cmap=plt.gray())
+        plt.show()
     x = cv2.Sobel(fill, cv2.CV_16S, 1, 0, ksize=3)
     y = cv2.Sobel(fill, cv2.CV_16S, 0, 1, ksize=3)
 
@@ -671,6 +671,8 @@ def get_border_by_grabcut(img, predict_border_lines):
     return lines
 
 
+
+# 比较图片中心和边缘亮度 未用
 def compare_light(img):
     """
     比较图片中心和边缘亮度
@@ -1062,8 +1064,9 @@ def get_best_from_two_method(line1, line2):
 def select_best_border(id_rect, lines1, lines2, lines3):
     """
     从不同算法得到的边界线中选择最佳的边界线
+    :param lines3: grabcut
     :param lines1: 通过边缘检测计算得到的边界线
-    :param lines2: 通过最大轮廓得到的边界线
+    :param lines2: 通过最大轮廓得到的边界线f
     :return: 选择的最佳边界线
     """
     # print(lines1)
@@ -1116,8 +1119,6 @@ def select_best_border(id_rect, lines1, lines2, lines3):
                     best_lines.append(line)
         elif len(lines2) != 4 and len(lines3) != 4:
             return lines1
-
-
 
 
     # print(best_lines)
@@ -1457,7 +1458,7 @@ def test_point(img, lines1, lines2, lines3):
     if len(lines3) == 4:
         draw_point_lines(img.copy(), lines3)
 
-
+# 根据直线的距离比较最佳直线的正面纠偏
 def front_correct_skew(img):
     """
     正面纠偏
@@ -1465,6 +1466,13 @@ def front_correct_skew(img):
     :return: 纠偏后的图像
     """
     # img = img[5:-5, 5: -5]
+    # 导入grabcut1的函数
+    from foo.tests.front_demo import grabcut_correct
+    from foo.tests.front_demo import classify_lines
+    from foo.tests.front_demo import predict_rect
+    from foo.tests.front_demo import face_detect_rotation
+    from foo.tests.front_demo import find_cross_point1
+
     img2 = copy.deepcopy(img)
     img3 = copy.deepcopy(img)
     # lines = get_border_by_canny(img.copy())
@@ -1508,9 +1516,11 @@ def front_correct_skew(img):
         for line in predict_border_lines:
             x1, y1, x2, y2 = line
             cv2.line(img2, (x1, y1), (x2, y2), (255, 0, 0), 5)
-        plt.imshow(img2)
-        plt.show()
-
+        if is_debug ==1:
+            plt.imshow(img2)
+            plt.show()
+    # cv2.imshow("pred_line", img2)
+    # cv2.waitKey(0)
 
     # 通过canny算子计算梯度，并检测直线
     try:
@@ -1555,9 +1565,194 @@ def front_correct_skew(img):
     except Exception as e:
         best_lines_by_grabcut = []
 
+    try:
+        shape, img1, img3, img4, img5, ratio = face_detect_rotation(img)
+        lt_x, lt_y, leng, wid = predict_rect(img1, img3, shape)
+        l_limit,v_limit = grabcut_correct(img3, lt_x, lt_y, leng, wid)
+        top_line, bottom_line, left_line, right_line = classify_lines(l_limit,v_limit)
+        t_l_point, t_r_point, b_l_point, b_r_point = find_cross_point1(top_line,bottom_line,left_line,right_line)
+
+    except Exception as e:
+        best_lines_by_grabcut = []
     #test_point(img.copy(), best_lines_by_canny, best_lines_by_contour, best_lines_by_grabcut)
 
     best_lines = select_best_border(id_rect, best_lines_by_canny, best_lines_by_contour, best_lines_by_grabcut)
+
+
+    if len(best_lines) != 0:
+        # 计算交点
+        # print(best_lines)
+        top = best_lines[0]
+        bottom = best_lines[1]
+        left = best_lines[2]
+        right = best_lines[3]
+
+        t_l_point = find_cross_point(top, left)
+        t_r_point = find_cross_point(top, right)
+        b_l_point = find_cross_point(bottom, left)
+        b_r_point = find_cross_point(bottom, right)
+        return t_l_point, t_r_point, b_l_point, b_r_point, img2
+
+    # 返回的是第二个grabcut的点
+    if len(best_lines) == 0:
+
+        return t_l_point, t_r_point, b_l_point, b_r_point, img2
+
+
+# 根据斜率k和b选择最佳直线的正面纠偏
+def front_correct_skew1(img):
+    """
+    正面纠偏
+    :param img: 图像
+    :return: 纠偏后的图像
+    """
+    # img = img[5:-5, 5: -5]
+    # 导入grabcut1的函数
+    from foo.tests.front_demo import grabcut_correct
+    from foo.tests.front_demo import classify_lines
+    from foo.tests.front_demo import predict_rect
+    from foo.tests.front_demo import face_detect_rotation
+    from foo.tests.front_demo import fitline
+    from foo.tests.front_demo import line_area
+
+    img2 = copy.deepcopy(img)
+    img3 = copy.deepcopy(img)
+    # lines = get_border_by_canny(img.copy())
+    # if compare_light(img):
+    #     lines = get_border_by_canny(img.copy())
+    # else:
+    #     lines = get_border_gradient(img.copy())
+
+    # get_border_gradient(img.copy())
+    # 人脸及人脸特征点检测
+
+    detector = dlib.get_frontal_face_detector()
+    predictor = dlib.shape_predictor(
+        "tools/shape_predictor_68_face_landmarks.dat")  # C:/Users/Alexi/Desktop/IDCard_Identification/foo/shape_predictor_68_face_landmarks.dat
+    faces = detector(img, 1)
+    face_rect = faces[0]
+    max_face = [face_rect.left(), face_rect.top(), face_rect.right() - face_rect.left(),
+                face_rect.bottom() - face_rect.top()]
+    shape = predictor(img, faces[0])
+    # print(shape,shape.part(0).x,np.array(shape.part(0)))
+    land_mark = []
+    land_mark.append((shape.part(36).x, shape.part(36).y))
+    land_mark.append((shape.part(45).x, shape.part(45).y))
+    land_mark.append((shape.part(27).x, shape.part(27).y))
+    land_mark.append((shape.part(57).x, shape.part(57).y))
+
+    # print(land_mark)
+    cv2.circle(img2, land_mark[0], 8, (0, 0, 255), 2)
+    cv2.circle(img2, land_mark[1], 8, (0, 0, 255), 2)
+    cv2.circle(img2, land_mark[2], 8, (0, 0, 255), 2)
+    cv2.circle(img2, land_mark[3], 8, (0, 0, 255), 2)
+
+    if is_debug == 1:
+        plt.imshow(img2)
+        plt.show()
+    # id_rect = get_id_by_corner(img, max_face)
+
+    id_rect = get_id_by_binary(img.copy(), max_face)
+    predict_border_lines = predict_location(land_mark, max_face, id_rect)
+    # print(predict_border_lines)
+    if is_show_predict_lines:
+        for line in predict_border_lines:
+            x1, y1, x2, y2 = line
+            cv2.line(img2, (x1, y1), (x2, y2), (255, 0, 0), 5)
+        plt.imshow(img2)
+        plt.show()
+    # cv2.imshow("pred_line", img2)
+    # cv2.waitKey(0)
+
+    # 通过canny算子计算梯度，并检测直线
+    try:
+        lines_by_canny = get_border_by_canny(img.copy())
+        if len(lines_by_canny) > 100:
+            lines_by_canny = get_border_by_canny(img.copy(), 1)
+        top_lines, bottom_lines, left_lines, right_lines = filter_and_classify_lines(img.copy(), lines_by_canny,
+                                                                                     img2.copy(),
+                                                                                     face_rect)
+        canny_lines = []
+        top_line = fitline(top_lines)
+        bottom_line = fitline(bottom_lines)
+        left_line = fitline(left_lines)
+        right_line = fitline(right_lines)
+        # 添加k,b值
+        canny_lines.append([top_line[0], top_line[1]])
+        canny_lines.append([bottom_line[0], bottom_line[1]])
+        canny_lines.append([left_line[0], left_line[1]])
+        canny_lines.append([right_line[0], right_line[1]])
+
+    except Exception as e:
+        canny_lines = []
+
+    # 获取二值化后的最大轮廓的边界线
+    try:
+        lines_by_contour = get_border_by_binary_max_contour(img.copy())
+        top_lines, bottom_lines, left_lines, right_lines = filter_and_classify_lines(img.copy(), lines_by_contour,
+                                                                                     img2.copy(),
+                                                                                     face_rect)
+        # best_lines_by_contour = get_best_line_by_prediction(top_lines, bottom_lines, left_lines, right_lines,
+        #                                                   predict_border_lines, img.copy())
+        contour_lines = []
+        top_line = fitline(top_lines)
+        bottom_line = fitline(bottom_lines)
+        left_line = fitline(left_lines)
+        right_line = fitline(right_lines)
+        # 添加k,b值
+        contour_lines.append([top_line[0], top_line[1]])
+        contour_lines.append([bottom_line[0], bottom_line[1]])
+        contour_lines.append([left_line[0], left_line[1]])
+        contour_lines.append([right_line[0], right_line[1]])
+        # best_lines_by_contour = select_border_lines_by_max_contour(top_lines, bottom_lines, left_lines, right_lines, img.copy())
+    except Exception as e:
+        contour_lines = []
+
+    # lines_by_grabcut = get_border_by_grabcut(img.copy(), predict_border_lines)
+    # top_lines, bottom_lines, left_lines, right_lines = filter_and_classify_lines(img.copy(), lines_by_grabcut,
+    #                                                                              img2.copy(),
+    #                                                                              face_rect)
+    # # best_lines_by_grabcut = get_best_line_by_prediction(top_lines, bottom_lines, left_lines, right_lines,
+    # #                                                     predict_border_lines, img.copy())
+    # best_lines_by_grabcut = select_border_lines_by_max_contour(top_lines, bottom_lines, left_lines, right_lines,img.copy())
+    try:
+        lines_by_grabcut = get_border_by_grabcut(img.copy(), copy.deepcopy(predict_border_lines))
+        top_lines, bottom_lines, left_lines, right_lines = filter_and_classify_lines(img.copy(), lines_by_grabcut,
+                                                                                     img2.copy(),
+                                                                                     face_rect)
+        # best_lines_by_grabcut = get_best_line_by_prediction(top_lines, bottom_lines, left_lines, right_lines,
+        #                                                 predict_border_lines, img.copy())
+        grabcut_lines = []
+        top_line = fitline(top_lines)
+        bottom_line = fitline(bottom_lines)
+        left_line = fitline(left_lines)
+        right_line = fitline(right_lines)
+        # 添加k,b值
+        grabcut_lines.append([top_line[0],top_line[1]])
+        grabcut_lines.append([bottom_line[0], bottom_line[1]])
+        grabcut_lines.append([left_line[0], left_line[1]])
+        grabcut_lines.append([right_line[0], right_line[1]])
+        # best_lines_by_grabcut = select_border_lines_by_max_contour(top_lines, bottom_lines, left_lines, right_lines,img.copy())
+    except Exception as e:
+        grabcut_lines = []
+
+    try:
+        shape, img1, img3, img4, img5, ratio = face_detect_rotation(img)
+        lt_x, lt_y, leng, wid = predict_rect(img1, img3, shape)
+        l1 = grabcut_correct(img3, lt_x, lt_y, leng, wid)
+        l_limit, v_limit = line_area(l1, lt_x, lt_x + leng, lt_y, lt_y + wid)
+        top_line1, bottom_line1, left_line1, right_line1 = classify_lines(l_limit, v_limit)
+
+        grabcut1_lines = []
+        grabcut1_lines.append([top_line1[0], top_line1[1]])
+        grabcut1_lines.append([bottom_line1[0], bottom_line1[1]])
+        grabcut1_lines.append([left_line1[0], left_line1[1]])
+        grabcut1_lines.append([right_line1[0], right_line1[1]])
+    except Exception as e:
+        grabcut1_lines = []
+    # test_point(img.copy(), best_lines_by_canny, best_lines_by_contour, best_lines_by_grabcut)
+
+    best_lines = select_best_border(canny_lines, contour_lines, grabcut_lines, grabcut1_lines)
 
     if is_debug == 1:
         plt.imshow(img2)
@@ -1567,7 +1762,6 @@ def front_correct_skew(img):
     # vertical = sorted(vertical, key=lambda l: l[0] + l[2])
 
     return best_lines, img2
-
 
 def correct_skew(img, is_front, max_face=[0, 0, 0, 0]):
     """
@@ -1582,19 +1776,11 @@ def correct_skew(img, is_front, max_face=[0, 0, 0, 0]):
     if is_front == 1:
         # try:
         img_original = copy.deepcopy(img)
-        best_lines, img2 = front_correct_skew(img)
 
-        # 计算交点
-        # print(best_lines)
-        top = best_lines[0]
-        bottom = best_lines[1]
-        left = best_lines[2]
-        right = best_lines[3]
+        # best_lines, img2 = front_correct_skew(img)
 
-        t_l_point = find_cross_point(top, left)
-        t_r_point = find_cross_point(top, right)
-        b_l_point = find_cross_point(bottom, left)
-        b_r_point = find_cross_point(bottom, right)
+        t_l_point, t_r_point, b_l_point, b_r_point, img2 = front_correct_skew(img)
+
         # 用红色画出四个顶点
         for point in t_l_point, t_r_point, b_l_point, b_r_point:
             cv2.circle(img, point, 8, (0, 0, 255), 2)
@@ -1604,8 +1790,8 @@ def correct_skew(img, is_front, max_face=[0, 0, 0, 0]):
         cv2.line(img, b_r_point, t_r_point, (255, 0, 0), 3)
         cv2.line(img, b_r_point, b_l_point, (255, 0, 0), 3)
         cv2.line(img, b_l_point, t_l_point, (255, 0, 0), 3)
-        # plt.imshow(img)
-        # plt.show()
+        plt.imshow(img)
+        plt.show()
         # cv2.line(img2, t_l_point, t_r_point, (255, 255, 255), 1)
         # cv2.line(img2, b_r_point, t_r_point, (255, 255, 255), 1)
         # cv2.line(img2, b_r_point, b_l_point, (255, 255, 255), 1)
@@ -1614,9 +1800,9 @@ def correct_skew(img, is_front, max_face=[0, 0, 0, 0]):
             plt.imshow(img2)
             plt.show()
             cv2.imwrite("img_test1.jpg", img2)
-        if is_debug == 1:
-            plt.imshow(img)
-            plt.show()
+        # if is_debug == 1:
+        #     plt.imshow(img)
+        #     plt.show()
         # return  img
         # 透视变换
         width = 500  # 生成图的宽
@@ -1629,8 +1815,9 @@ def correct_skew(img, is_front, max_face=[0, 0, 0, 0]):
         M = cv2.getPerspectiveTransform(pts1, pts2)
         # 进行透视变换
         dst = cv2.warpPerspective(img_original, M, (width, height))
-        # plt.imshow(dst)
-        # plt.show()
+        plt.imshow(dst)
+        plt.show()
+
         if is_debug == 1:
             plt.imshow(dst)
             plt.show()

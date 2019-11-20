@@ -11,6 +11,7 @@ from datetime import datetime
 from foo.tools.front_correct_skew import correct_skew, resize
 from foo.idcard_back_detection import *
 from foo.idcard_front_detection import *
+from foo.tools.address import *
 
 # 加载人脸检测模型
 classfier = cv2.CascadeClassifier("../haarcascades/haarcascade_frontalface_alt2.xml")
@@ -40,10 +41,10 @@ def batch_process(input_dir="images/", output_dir="output/"):
         #     continue
         path = input_dir + filename
         save_name = output_dir + filename
-        try:
-            single_process(path, save_name)
-        except Exception as e:
-            print(e)
+        # try:
+        single_process(path, save_name)
+        # except Exception as e:
+        #     print(e)
 
 
 def single_process(path, save_name):
@@ -63,7 +64,7 @@ def single_process(path, save_name):
     if len(img.shape) == 3:
         grey = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2GRAY)
     else:
-        gray = np.array(img)
+        grey = np.array(img)
     # 使用opencv人脸检测模型
 
     faces_cv = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
@@ -90,9 +91,10 @@ def single_process(path, save_name):
                 copy.deepcopy(img), save_name, imgHeight, imgWidth, max_face)
             is_need_correct_skew = check_location(img, regions)
         else:
-            return
-            # box_get_back(img, save_name, imgHeight, imgWidth)
-            # is_need_correct_skew = 1
+            if not pre_fitline_get_back(img, save_name):
+                is_need_correct_skew = 1
+                # box_get_back(img, save_name, imgHeight, imgWidth)
+
     except Exception as e:
         print("初次定位出错，需要进行纠偏！")
         is_need_correct_skew = 1
@@ -133,19 +135,19 @@ def single_process(path, save_name):
             except Exception as e:
                 print("正面定位失败！")
         else:
-            try:
-                box_get_back(img, save_name, imgHeight, imgWidth)
-            except Exception as e:
-                print("反面定位失败！")
-                pass
+            # try:
+                # if not pre_fitline_get_back(img, save_name):
+                    box_get_back(img, save_name, imgHeight, imgWidth)
+            # except Exception as e:
+            #      print("反面定位失败！")
+            #     pass
 
         locate_time = datetime.now()
-        print(locate_time - correct_skew_time, correct_skew_time - facedetect_time, facedetect_time - start_time)
-        # box_get_back(img, save_name, imgHeight, imgWidth)
+         # box_get_back(img, save_name, imgHeight, imgWidth)
 
 
 def face_detect(img):
-
+    # angle范围在-90->90度，纠正-90->90度的偏差
     from foo.tools.back_correct_skew import cal_rotation_angle
     angle = cal_rotation_angle(img.copy())
 
@@ -188,7 +190,7 @@ def face_detect(img):
         if len(img.shape) == 3:
             grey = cv2.cvtColor(np.array(img_rotation), cv2.COLOR_BGR2GRAY)
         else:
-            gray = np.array(img_rotation)
+            grey = np.array(img_rotation)
 
         # 使用opencv人脸检测模型
         faces_cv = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
@@ -207,14 +209,14 @@ def face_detect(img):
 
 if __name__ == "__main__":
     is_debug = 0
-    is_batch = 0
+    is_batch = 1
     if is_batch:
-        input_dir = "C:/Users/Alexi/Desktop/idcard_info/sfz_front"
-        output_dir = "C:/Users/Alexi/Desktop/idcard_info/sfz_result"
+        input_dir = input_dir
+        output_dir = output_dir
         batch_process(input_dir, output_dir)  # 批量处理
     else:
 
-        img_name = "1ba6ce9d-9170-425d-a04c-0b8b4bb6802d.jpeg"
-        path = "C:/Users/Alexi/Desktop/idcard_info/sfz_front/"+ img_name
+        img_name = img_name
+        path = path_without_img_name + img_name
         save_name = "../output/"+img_name.split(".")[0]+".jpg"
         single_process(path, save_name)  # 单张调试
