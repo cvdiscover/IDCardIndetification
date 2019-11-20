@@ -170,7 +170,7 @@ if __name__ == '__main__':
 
 
     detector = dlib.get_frontal_face_detector()
-    image = io.imread("D://front_cut_image//a3eb0fe5-c517-409f-9b3b-139a30e6bae7.jpeg")
+    image = io.imread("D://front_cut_image//1cb54a72-c159-4fa4-974e-5f7e3deeeba5.jpeg")
     image = resize(image, width=800)
     image_copy = image.copy()
     dets = detector(image, 2)  # 使用detector进行人脸检测 dets为返回的结果
@@ -198,7 +198,7 @@ if __name__ == '__main__':
     left2 = np.uint(left - 0.3*width)
     bottom2 = np.uint(bottom + 0.6*width)
 
-    img = cv2.rectangle(image,(left2,bottom2),(left2+2*width,bottom2+2*high),(0,0,255),2)
+    img = cv2.rectangle(image,(left2,bottom2),(left2+2*width-50,bottom2+2*high),(0,0,255),2)
 
     top2 = np.uint(bottom2 + 1.8 * high)
     right2 = np.uint(left2 + 1.6 * width)
