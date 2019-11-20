@@ -4,7 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 import os
 import dlib
-import math
+import matplotlib.patches as mpatches
 from PIL import Image
 import copy
 
@@ -152,6 +152,7 @@ def face_detect_rotation(img):
     detector = dlib.get_frontal_face_detector()
     # 加载5个关键点的定位
     predictor = dlib.shape_predictor('shape_predictor_5_face_landmarks.dat')
+
     orig = img.copy()
     img = resize(orig, height=450)
     print(img.shape)
@@ -178,9 +179,9 @@ def face_detect_rotation(img):
     img = resize(img, height=450)
     ratio = img.shape[0] / 450.0
 
-    img3 = img.copy()
-    img4 = img.copy()
-    img5 = img.copy()
+    img3 = copy.deepcopy(img)
+    img4 = copy.deepcopy(img)
+    img5 = copy.deepcopy(img)
     img1 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     rects = detector(img1, 2)
@@ -191,9 +192,9 @@ def face_detect_rotation(img):
     plt.scatter(shape[0:5, 0], shape[0:5, 1], color='r', marker='o', s=5)  # 'ro'表示red，'o'类型的线条
     for i in np.arange(5):
         plt.text(shape[i, 0] - 8, shape[i, 1] - 8, i)
-    plt.show()  # 5点法检测人脸，左眼、右眼和唇上口#检测眼睛个唇上口的位置
+    # plt.show()  # 5点法检测人脸，左眼、右眼和唇上口#检测眼睛个唇上口的位置
     print('人脸检测完毕')  # 人脸识别
-    # 读取图片，并且做初始化旋转操作#读取图片+人脸识别
+    #读取图片，并且做初始化旋转操作#读取图片+人脸识别
 
     shape = predictor(img1, rects[0])
     shape = shape_to_np(shape)
@@ -202,6 +203,96 @@ def face_detect_rotation(img):
     x2 = shape[0][0]
     y2 = shape[0][1]
     return shape, img1, img3, img4, img5, ratio
+
+# 计算图片旋转角度
+def cal_rotation_angle(img):
+    """
+    计算旋转角度
+    :param img: 图片
+    :return:旋转角度
+    """
+    from foo.tools.back_correct_skew import mark_corner_image
+    img_mark = mark_corner_image(img, point_size = 3)
+    # 投影计算角度，对图片进行纠正
+    from foo.tools.tools import project
+
+    project_image = np.zeros((180, img_mark.shape[0]))
+
+    img_mark_im = Image.fromarray(img_mark)
+    for i in range(180):
+
+        im_rotate = img_mark_im.rotate(i)
+        project_image[i] = project(im_rotate, orientation=0)
+
+    max_index = np.where(project_image[:, :] == project_image.max())
+    rotate_angle = max_index[0][0]
+
+    return rotate_angle
+
+# 人脸检测（判断正反面）
+def face_detect(img):
+    # 加载人脸检测
+    detector = dlib.get_frontal_face_detector()
+    classfier = cv2.CascadeClassifier("../haarcascades/haarcascade_frontalface_alt2.xml")
+
+    from foo.tools.back_correct_skew import cal_rotation_angle
+    angle = cal_rotation_angle(img.copy())
+
+    # 将填充颜色改为（100,100,100）
+    img1 = Image.fromarray(np.array(img))
+    im2 = img1.copy().convert('RGBA')
+    rot = im2.rotate(angle, expand=True)
+    fff = Image.new('RGBA', rot.size, (100,) * 4)
+    out = Image.composite(rot, fff, rot)
+    img_rotation = out.convert(img1.mode)
+
+    img_rotation = Image.fromarray(np.array(img_rotation))
+
+    # img_rotation = Image.fromarray(np.array(img))
+    # 使用dlib人脸检测模型
+    faces_dlib = detector(np.array(img_rotation), 1)
+    # print(faces_dlib[0])
+    #
+    # box = [[318, 474], [318, 367], [426, 367], [426, 474]]
+    # # cv2.drawContours(img, np.array([box]), 0, (0, 255, 0), 2)
+    # plt.imshow(img, cmap=plt.gray())
+    # plt.show()
+    if len(img.shape) == 3:
+        gray = cv2.cvtColor(np.array(img_rotation), cv2.COLOR_BGR2GRAY)
+    else:
+        gray = np.array(img_rotation)
+    # plt.imshow(gray, cmap=plt.gray())
+    # plt.show()
+    # 使用opencv人脸检测模型
+    faces_cv = classfier.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
+    # print(faces_cv)
+    # plt.imshow(img_rotation, cmap=plt.gray())
+    # plt.show()
+    is_front = 1
+    # print(len(faces_dlib) , len(faces_cv) )
+    if len(faces_dlib) == 0 or len(faces_cv) == 0:
+        img_rotation = img_rotation.rotate(180, expand=True)
+        faces_dlib = detector(np.array(img_rotation), 1)
+
+        if len(img.shape) == 3:
+            grey = cv2.cvtColor(np.array(img_rotation), cv2.COLOR_BGR2GRAY)
+        else:
+            grey = np.array(img_rotation)
+
+        # 使用opencv人脸检测模型
+        faces_cv = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
+        #print(len(faces_dlib),len(faces_cv))
+        if len(faces_dlib) == 0 or len(faces_cv) == 0:
+            is_front = 0
+
+    # print(len(faces_dlib), len(faces_cv))
+    # plt.imshow(img_rotation, cmap=plt.gray())
+    # plt.show()
+    if is_front:
+        return np.array(img_rotation)
+    else:
+        return img
+
 
 def predict_rect(gray, scr, shape):
     rectKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 3))
@@ -219,17 +310,17 @@ def predict_rect(gray, scr, shape):
     gradX = cv2.morphologyEx(gradX, cv2.MORPH_CLOSE, rectKernel, iterations=2)
     # cv_show('gradX', gradX)
     thresh = cv2.threshold(gradX, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-    cv_show('thresh', thresh)
+    # cv_show('thresh', thresh)
 
     thresh1 = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, sqlKernel)
-    cv_show('thresh', thresh)
+    # cv_show('thresh', thresh)
 
     threshCnts = cv2.findContours(thresh1.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[1]
     cnts = threshCnts
 
     cur_img = scr.copy()
     cv2.drawContours(cur_img, cnts, -1, (0, 0, 255), 2)
-    cv_show('img', cur_img)
+    # cv_show('img', cur_img)
 
     locs = []
     # 遍历轮廓
@@ -240,10 +331,10 @@ def predict_rect(gray, scr, shape):
         mid = (shape[1][1] + shape[3][1]) / 2.0
 
             # 选择合适的区域，根据实际任务来，这里的基本上都是四个数字一组
-        if ar > 11 and ar < 40 and y >= shape[4][1]+1.5*(shape[4][1]-mid):
+        if ar > 11 and ar < 40 and y >= shape[4][1]+1.5*(shape[4][1]-mid) and w >= 120  :
                 # 把符合的留下来
             locs.append((x, y, w, h))
-            print('locs', locs)
+            # print('locs', locs)
 
             gX = locs[0][0]
             gY = locs[0][1]
@@ -274,7 +365,7 @@ def predict_rect(gray, scr, shape):
             cv2.rectangle(scr, (gX - 3, gY - 3), (gX + gW + 3, gY + gH + 3), (0, 0, 255), 2)
             detect_id = []
             detect_id.append([gX - 3, gY - 3, gX + gW + 3, gY + gH + 3])
-            cv_show('rectangle', scr)
+            # cv_show('rectangle', scr)
 
     #预估grabcut的rect值
     if len(locs) == 0:
@@ -295,6 +386,7 @@ def predict_rect(gray, scr, shape):
     lb_x = rt_x - leng
     lb_y = rt_y + wid  # 计算出rect的四个点
     return lt_x, lt_y, leng, wid
+
 # 投影变换
 # def projection(img_binary, orientation=0, is_show = 0):
 #     """
@@ -500,10 +592,11 @@ def find_max_contour(after_grabcut, img):
     img2 = img.copy()
     img2[:, :] = 0
     cv2.drawContours(img2, cnts, -1, (255, 255, 255), 1)  # 获取并绘制轮廓
-    cv_show('outline', img2)
+    # cv_show('outline', img2)
     return img2
 
-def line_test(after_contours, scr):
+
+def line_detect(after_contours, scr):
     # 对轮廓检测后的直线进行直线检测
     minLineLength = 140
     maxLineGap = 7
@@ -512,7 +605,7 @@ def line_test(after_contours, scr):
     for x1, y1, x2, y2 in l1:  # lines[:,0,:]将直线压缩成二维图像，找出两个端点(降低维度)
         cv2.line(scr, (x1, y1), (x2, y2), (0, 255, 0), 1)
     plt.imshow(scr, cmap=plt.gray())
-    plt.show()
+    # plt.show()
     return l1
 
 # 限制直线检测后的直线数量
@@ -613,6 +706,34 @@ def fitline(lines):
         b = (output[3] - 57.29*output[2])
     return k,b
 
+
+def classify_lines(l_limit, v_limit):
+    top_level, bottom_level, left_vert, right_vert = line_group(l_limit,v_limit)
+
+    topline = fitline(top_level)#上一部分水平线拟合而成的斜率和b值
+    bottomline = fitline(bottom_level)#下一部分水平线拟合而成的斜率和b值
+    leftline = fitline(left_vert)#左侧垂直线的拟合而成的斜率和b值
+    rightline = fitline(right_vert)#右侧垂直线的拟合而成的斜率和b值
+    return topline,bottomline,leftline,rightline
+
+
+# def find_line_in_four(lines1, lines2, lines3, lines4):
+#     '''
+#     由直线的k,b值的接近程度来筛选最佳的直线
+#     lines1-lines4表示4条需要比较的直线集
+#     tan(3°)=0.05
+#     |b1 - b2| <= 30
+#     只比较
+#     '''
+#     if abs(lines1[0][0] - lines2[0][0]) <= 0.05 and abs(lines1[2][1] - lines2[2][1]) <= 30:
+
+
+
+# def select_best_lines(lines1, lines2, lines3, lines4):
+#     if len(lines1) == 4 and len(lines2) == 4 and len(lines3) == 4 and len(lines4):
+#         line = find_line_in_four()
+
+
 # 由拟合直线的斜率k和b计算四条直线的四个交点
 def find_cross_point1(topline, bottomline, leftline, rightline):
     # 通过斜率计算交点
@@ -624,23 +745,16 @@ def find_cross_point1(topline, bottomline, leftline, rightline):
     y3 = leftline[0] * x3 * 1.0 + leftline[1] * 1.0
     x4 = (bottomline[1] - rightline[1]) * 1.0 / (rightline[0] - bottomline[0])
     y4 = bottomline[0] * x4 * 1.0 + bottomline[1] * 1.0
-    point = []
-    point.append([int(x1), int(y1)])
-    point.append([int(x2), int(y2)])
-    point.append([int(x3), int(y3)])
-    point.append([int(x4), int(y4)])
-    p = np.array(point)
-    return x1, y1, x4, y4, p
+    t_l_point = ([int(x1), int(y1)])
+    t_r_point = ([int(x2), int(y2)])
+    b_l_point = ([int(x3), int(y3)])
+    b_r_point = ([int(x4), int(y4)])
+    return t_l_point, t_r_point, b_l_point, b_r_point
 
 # grabcut图像切割
-def grabcut_correct(name, savename):
-    img = cv2.imdecode(np.fromfile(name, dtype=np.uint8), -1)
-    #返回人脸检测后的点集，旋转后的图像和图片的比率
-    shape, img1, img3, img4, img5, ratio = face_detect_rotation(img)
-    #locs为检测到的所有框，max_rect为检测到的长度最大的框（可能为身份证号），gX, gY, gW, gH为最大框的范围
-    lt_x,lt_y,leng,wid = predict_rect(img1,img3,shape)
+def grabcut_correct(img3, lt_x, lt_y, leng, wid):
 
-# grabcut前景分割算法
+    # grabcut前景分割算法
     # 创建了一个与加载图像同形状的掩膜
     # 创建了以0为填充对象的前景和背景模型
     mask = np.zeros(img3.shape[:2], np.uint8)
@@ -653,44 +767,26 @@ def grabcut_correct(name, savename):
     cv2.grabCut(img3, mask, rect, bgdModel, fgdModel, 7, cv2.GC_INIT_WITH_RECT)
 
     mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
-    mask3 = mask2 * 255
+    img_binary = mask2 * 255
     img = img3 * mask2[:, :, np.newaxis]
     rectangle = cv2.rectangle(img.copy(), (int(lt_x)-5, int(lt_y) +10), (int(lt_x+leng)-5, int(lt_y+wid) + 10), (0, 255, 0),2)
-    cv_show('rectangle', rectangle)
+    # cv_show('rectangle', rectangle)
     # canny = cv2.Canny(mask3,70,30)
-    dilate = cv2.dilate(mask3, (3, 3), iterations=1)
-    cv_show('dilate', dilate)
+    dilate = cv2.dilate(img_binary, (3, 3), iterations=1)
+    # cv_show('dilate', dilate)
 
     # 寻找最大轮廓
-    img2 = find_max_contour(dilate, mask3)
+    img2 = find_max_contour(dilate, img_binary)
 
     # 对最大轮廓进行直线检测
-    l1 = line_test(img2, img3)
+    l1 = line_detect(img2, img3)
 
-    #区域筛选后的水平线和垂直线
-    l_limit, v_limit = line_area(l1, lt_x, lt_x+leng, lt_y, lt_y+wid)
+    return l1
 
-    #对区域内的直线进行上下左右的分类
-    top_level, bottom_level, left_vert, right_vert = line_group(l_limit,v_limit)
 
-    topline = fitline(top_level)#上一部分水平线拟合而成的斜率和b值
-    bottomline = fitline(bottom_level)#下一部分水平线拟合而成的斜率和b值
-    leftline = fitline(left_vert)#左侧垂直线的拟合而成的斜率和b值
-    rightline = fitline(right_vert)#右侧垂直线的拟合而成的斜率和b值
 
-    #由斜率k和b计算上下左右拟合直线的交点
-    x1 ,y1, x4, y4, p = find_cross_point1(topline, bottomline, leftline, rightline)
 
-    rectangle1 = cv2.rectangle(img4.copy(), (int(x1), int(y1)), (int(x4), int(y4)), (0, 255, 0),2)
-    cv_show('rectangle1',rectangle1)
-
-    #透视变换
-    warped = perspective_transformation(p.reshape(4, 2) * ratio,img5)
-    warped1 = resize(warped, width=500)
-    cv_show("scanned", warped1)  # 透视变换
-    cv2.imencode('.jpg', warped1, )[1].tofile(savename)
-
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # input_dir = "C:/Users/Administrator/PycharmProjects/cread_ocr/test1/"
     # output_dir = "C:/Users/Administrator/PycharmProjects/cread_ocr/result3/"
     # is_batch = 1
@@ -703,13 +799,38 @@ if __name__ == "__main__":
     #     path = path_without_img_name + img_name
     #     save_name = "../output/" + img_name.split(".")[0] + ".jpg"
     #     single_process(path, save_name)  # 单张调试
-    
 
 
 
-    for filename in os.listdir("C:/Users/Administrator/PycharmProjects/cread_ocr/test2/"):
-        print(filename)
-        grabcut_correct("C:/Users/Administrator/PycharmProjects/cread_ocr/test2/" + filename, "C:/Users/Administrator/PycharmProjects/cread_ocr/result_3/" + filename)
+
+    #
+    # img = cv2.imdecode(np.fromfile(name, dtype=np.uint8), -1)
+    # # 返回人脸检测后的点集，旋转后的图像和图片的比率
+    # shape, img1, img3, img4, img5, ratio = face_detect_rotation(img)
+    # # locs为检测到的所有框，max_rect为检测到的长度最大的框（可能为身份证号），gX, gY, gW, gH为最大框的范围
+    # lt_x, lt_y, leng, wid = predict_rect(img1, img3, shape)
+    #
+    # rectangle1 = cv2.rectangle(img4.copy(), (int(x1), int(y1)), (int(x4), int(y4)), (0, 255, 0), 2)
+    # cv_show('rectangle1', rectangle1)
+    #
+    # # 透视变换
+    # warped = perspective_transformation(p.reshape(4, 2) * ratio, img5)
+    # warped1 = resize(warped, width=500)
+    # cv_show("scanned", warped1)  # 透视变换
+    # cv2.imencode('.jpg', warped1, )[1].tofile(savename)
+    #
+    #
+    # for filename in os.listdir("C:/Users/Administrator/PycharmProjects/cread_ocr/test3/"):
+    #     print(filename)
+    #     grabcut_correct("C:/Users/Administrator/PycharmProjects/cread_ocr/test3/" + filename, "C:/Users/Administrator/PycharmProjects/cread_ocr/result_3/" + filename)
+
+
+
+
+
+
+
+
     # #
     # for filename in os.listdir("f ailed1/"):
     #     print(filename)

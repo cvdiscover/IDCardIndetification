@@ -64,7 +64,7 @@ def single_process(path, save_name):
     if len(img.shape) == 3:
         grey = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2GRAY)
     else:
-        gray = np.array(img)
+        grey = np.array(img)
     # 使用opencv人脸检测模型
 
     faces_cv = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
@@ -146,7 +146,7 @@ def single_process(path, save_name):
 
 
 def face_detect(img):
-
+    # angle范围在-90->90度，纠正-90->90度的偏差
     from foo.tools.back_correct_skew import cal_rotation_angle
     angle = cal_rotation_angle(img.copy())
 
@@ -189,7 +189,7 @@ def face_detect(img):
         if len(img.shape) == 3:
             grey = cv2.cvtColor(np.array(img_rotation), cv2.COLOR_BGR2GRAY)
         else:
-            gray = np.array(img_rotation)
+            grey = np.array(img_rotation)
 
         # 使用opencv人脸检测模型
         faces_cv = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
