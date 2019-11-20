@@ -41,10 +41,10 @@ def batch_process(input_dir="images/", output_dir="output/"):
         #     continue
         path = input_dir + filename
         save_name = output_dir + filename
-        try:
-            single_process(path, save_name)
-        except Exception as e:
-            print(e)
+        # try:
+        single_process(path, save_name)
+        # except Exception as e:
+        #     print(e)
 
 
 def single_process(path, save_name):
@@ -91,9 +91,10 @@ def single_process(path, save_name):
                 copy.deepcopy(img), save_name, imgHeight, imgWidth, max_face)
             is_need_correct_skew = check_location(img, regions)
         else:
+            if not pre_fitline_get_back(img, save_name):
+                is_need_correct_skew = 1
+                # box_get_back(img, save_name, imgHeight, imgWidth)
 
-            box_get_back(img, save_name, imgHeight, imgWidth)
-            # is_need_correct_skew = 1
     except Exception as e:
         print("初次定位出错，需要进行纠偏！")
         is_need_correct_skew = 1
@@ -129,20 +130,20 @@ def single_process(path, save_name):
             faceRects = np.array([[face_rect.left(), face_rect.top(), face_rect.right() - face_rect.left(),
                                    face_rect.bottom() - face_rect.top()]])
             max_face = faceRects[np.where(faceRects[:, 3] == faceRects[:, 3].max())]
-            # try:
-            box_get_front_correction(copy.deepcopy(img), save_name, imgHeight, imgWidth, max_face)
-            # except Exception as e:
-            #     print("正面定位失败！")
-        else:
             try:
-                box_get_back(img, save_name, imgHeight, imgWidth)
+                box_get_front_correction(copy.deepcopy(img), save_name, imgHeight, imgWidth, max_face)
             except Exception as e:
-                print("反面定位失败！")
-                pass
+                print("正面定位失败！")
+        else:
+            # try:
+                # if not pre_fitline_get_back(img, save_name):
+                    box_get_back(img, save_name, imgHeight, imgWidth)
+            # except Exception as e:
+            #      print("反面定位失败！")
+            #     pass
 
         locate_time = datetime.now()
-        print(locate_time - correct_skew_time, correct_skew_time - facedetect_time, facedetect_time - start_time)
-        # box_get_back(img, save_name, imgHeight, imgWidth)
+         # box_get_back(img, save_name, imgHeight, imgWidth)
 
 
 def face_detect(img):

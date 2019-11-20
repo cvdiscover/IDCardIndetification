@@ -66,9 +66,10 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     photo_y2 = face_rect[0][1] + face_rect[0][3] + 60
     photo_cut = img[photo_y1:photo_y2, photo_x1:photo_x2]
     img=cv2.rectangle(img,(photo_x1,photo_y1),(photo_x2,photo_y2),(0,0,255),2)
-    plt.imshow(img,cmap=plt.gray())
-    #plt.imshow(photo_cut, cmap=plt.gray())
-    plt.show()
+    if is_debug ==1:
+        plt.imshow(img,cmap=plt.gray())
+        #plt.imshow(photo_cut, cmap=plt.gray())
+        plt.show()
     photo_region = get_photo_position(photo_cut)
     photo_region[0][0] += photo_x1
     photo_region[0][1] += photo_y1
