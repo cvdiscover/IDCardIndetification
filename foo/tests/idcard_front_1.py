@@ -170,7 +170,7 @@ if __name__ == '__main__':
 
 
     detector = dlib.get_frontal_face_detector()
-    image = io.imread("D://front_cut_image//1cb54a72-c159-4fa4-974e-5f7e3deeeba5.jpeg")
+    image = io.imread("D://front_cut_image//ff5ee0f8-97f6-4915-99ce-2eda27d1cfb5.jpeg")
     image = resize(image, width=800)
     image_copy = image.copy()
     dets = detector(image, 2)  # 使用detector进行人脸检测 dets为返回的结果
@@ -198,7 +198,9 @@ if __name__ == '__main__':
     left2 = np.uint(left - 0.3*width)
     bottom2 = np.uint(bottom + 0.6*width)
 
-    img = cv2.rectangle(image,(left2,bottom2),(left2+2*width-50,bottom2+2*high),(0,0,255),2)
+
+
+    img = cv2.rectangle(image,(left2,bottom2-20),(left2+2*width-50,bottom2+2*high),(0,0,255),2)
 
     top2 = np.uint(bottom2 + 1.8 * high)
     right2 = np.uint(left2 + 1.6 * width)
@@ -303,20 +305,23 @@ if __name__ == '__main__':
 
     if left3 > 0:
         left3 = left3
-        top2 = bottom2 + 2 * high - 60
+        top2 = bottom2 + 2 * high - 100
         point1 = (left3, bottom2)
         point2 = (left2, top2)
     else:
         left3 = 90
-        top2 = bottom2 + 2 * high - 60
+        top2 = bottom2 + 2 * high - 100
         point1 = (left3, bottom2)
         point2 = (left2, top2)
 
+    if top2 < 0:
+        top2 = 20
     img_copy = img.copy()
     cv2.rectangle(img, point1, point2, (0, 0, 255), 2)
     cv2.imshow('result',img)
     cv2.waitKey(0)
     part = image_copy[top2:bottom2,left3:left2+15]
+    print((left3,top2),(left2+15,bottom2))
     print(part.shape[:2])
     cv2.imshow('part', part)
     cv2.waitKey(0)
