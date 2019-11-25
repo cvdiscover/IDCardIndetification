@@ -322,37 +322,6 @@ def box_get_front_message(image, save_name):
 
     retCnts = getpart_info(part)
 
-    # color = ('b', 'g', 'r')
-    # for i, col in enumerate(color):
-    #     histr = cv2.calcHist([part], [i], None, [256], [0, 256])
-    #     plt.plot(histr, color=col)
-    # plt.xlim([0, 256])
-    # plt.show()
-    #
-    # img2_color_equl = part.copy()
-    # #需要按通道分别均衡化
-    # img2_color_equl[:,:,0] = cv2.equalizeHist(part[:,:,0])
-    # img2_color_equl[:,:,1] = cv2.equalizeHist(part[:,:,1])
-    # img2_color_equl[:,:,2] = cv2.equalizeHist(part[:,:,2])
-    #
-    # '''
-    #   颜色直方图均衡化
-    # '''
-    # equl=cv2.cvtColor(img2_color_equl,cv2.COLOR_BGR2RGB)
-    # cv_show('equl',equl)
-    # hsv = cv2.cvtColor(equl, cv2.COLOR_BGR2HSV)
-    # low_hsv = np.array([0,0,0])
-    # high_hsv = np.array([180,255,30])
-    # mask = cv2.inRange(hsv,lowerb=low_hsv,upperb=high_hsv)
-    # cv2.imshow("test",mask)
-    # cv2.waitKey(0)
-    #
-    # ret=cv2.morphologyEx(mask,cv2.MORPH_CLOSE,sqlKernel,iterations=2)
-    # cv_show('ret',ret)
-    #
-    # retCnts=cv2.findContours(ret.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
-    # Rcnts = sorted(retCnts,key=cv2.contourArea, reverse=True)[0]
-    # retCnts = sorted(retCnts, key=lambda a: cv2.boundingRect(a)[3], reverse=True)
     retCnts = sorted(retCnts, key=cv2.contourArea, reverse=True)
     h = retCnts[0]
     i = 0

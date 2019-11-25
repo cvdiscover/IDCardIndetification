@@ -54,14 +54,12 @@ def single_process(path, save_name):
     :return:
     """
     # path = "images/28.jpg"
-    start_time = datetime.now()
     # path = "F:/idcard/2/2/images/C370DA4B883D4F12A607938F6B390FBE.JPG"
 
     img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), -1)
     orig = img.copy()
     img = resize(orig, width=500)
     img = face_detect(img)
-    start_time = datetime.now()
     faces = detector(img, 1)
 
     if len(img.shape) == 3:
@@ -93,7 +91,7 @@ def single_process(path, save_name):
                 copy.deepcopy(img), save_name, imgHeight, imgWidth, max_face)
             is_need_correct_skew = check_location(img, regions)
         else:
-            if not pre_fitline_get_back(img, save_name):
+            if not pre_fitline_get_back(orig.copy(), save_name):
                 is_need_correct_skew = 1
 
     except Exception as e:
@@ -128,10 +126,10 @@ def single_process(path, save_name):
                 print("正面定位失败！")
         else:
             try:
-                imgWidth = 500
-                imgHeight = 316
+                # imgWidth = 500
+                # imgHeight = 316
                 # if not pre_fitline_get_back(img, save_name):
-                box_get_back(img, save_name, imgHeight, imgWidth)
+                box_get_back(img, save_name, 316, 500)
             except Exception as e:
                 print("反面定位失败！")
                 pass
