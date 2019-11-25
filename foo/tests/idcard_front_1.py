@@ -25,6 +25,27 @@ def cv_show(name, img):
     cv2.imshow(name,img)
     cv2.waitKey(0)
 
+def max_face_detect(faces, image):
+    left = faces[0].left()
+    top = faces[0].top()
+    right = faces[0].right()
+    bottom = faces[0].bottom()
+    Wwidth = right - left
+    Hheigt = top - bottom
+
+    width = right - left
+    high = top - bottom
+    left2 = np.uint(left - 0.3*width)
+    bottom2 = np.uint(bottom + 0.6*width)
+    img = cv2.rectangle(image, (left2, bottom2 - 20), (left2 + 2 * width - 50, bottom2 + 2 * high), (0, 0, 255), 2)
+    # cv_show('img',img)
+
+    top2 = np.uint(bottom2 + 1.8 * high)
+    right2 = np.uint(left2 + 1.6 * width)
+    # 人像框范围
+    max_face = image[top2:bottom2, left2:right2, :]
+    # cv_show('face_img',max_face)
+    return max_face, img, width, high, left2, bottom2, right2
 
 # 开操作 腐蚀+膨胀 cv.MORPH_OPEN
 def open_demo(image):
@@ -48,8 +69,8 @@ def close_demo(image):
 def getpart_info(part):
 
     result = cv2.bilateralFilter(part.copy(), 0, 50, 5)
-    cv2.imshow("bilateralFilter", result)
-    cv2.waitKey(0)
+    # cv2.imshow("bilateralFilter", result)
+    # cv2.waitKey(0)
 
     thresh = cv2.adaptiveThreshold(cv2.cvtColor(result, cv2.COLOR_BGR2GRAY), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                    cv2.THRESH_BINARY_INV, 25, 5)
@@ -72,8 +93,8 @@ def getpart_info(part):
     Element = cv2.erode(Element, kernelX)
     Element = cv2.erode(Element, kernelY)
 
-    cv2.imshow('getStructuringElement', Element)
-    cv2.waitKey(0)
+    # cv2.imshow('getStructuringElement', Element)
+    # cv2.waitKey(0)
 
     _, contours, hair = cv2.findContours(Element, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -115,7 +136,7 @@ def box_get_front_correction(img,addX,addY ,imgHeight,imgWidth,faceLeft,name_y,s
     img = cv2.rectangle(img, (sex_x, sex_y), (sex_addWidth, sex_addHeight), (0, 0, 255), 2)
 
     # 民族
-    nationality_x = addX + 160
+    nationality_x = addX + 150
     nationality_y = sex_y
     nationality_addHeight = int(nationality_y + imgHeight / 7.65)
     nationality_addWidth = int(nationality_x + 50)
@@ -166,21 +187,14 @@ def selectionSort(arr):
         newArr.append(arr.pop(smallest))  # 每一次都把findSmallest里面的最小值删除并存放在新的数组newArr中
     return newArr
 
-if __name__ == '__main__':
+def box_get_front_message(image, save_name):
 
-
-    detector = dlib.get_frontal_face_detector()
-    image = io.imread("D://front_cut_image//ff5ee0f8-97f6-4915-99ce-2eda27d1cfb5.jpeg")
-    image = resize(image, width=800)
     image_copy = image.copy()
+    detector = dlib.get_frontal_face_detector()
     dets = detector(image, 2)  # 使用detector进行人脸检测 dets为返回的结果
     # 将识别的图像可视化
-    plt.figure()
-    ax = plt.subplot(111)
-    ax.imshow(image)
-    plt.axis("off")
 
-    predictor = dlib.shape_predictor("D://shape_predictor_5_face_landmarks.dat")
+    predictor = dlib.shape_predictor("C:/Users/Administrator/PycharmProjects/IDCardIndetification/foo/tools/shape_predictor_5_face_landmarks.dat")
 
     left = dets[0].left()
     top = dets[0].top()
@@ -198,8 +212,6 @@ if __name__ == '__main__':
     left2 = np.uint(left - 0.3*width)
     bottom2 = np.uint(bottom + 0.6*width)
 
-
-
     img = cv2.rectangle(image,(left2,bottom2-20),(left2+2*width-50,bottom2+2*high),(0,0,255),2)
 
     top2 = np.uint(bottom2 + 1.8 * high)
@@ -212,29 +224,11 @@ if __name__ == '__main__':
     # cv_show('ret',ret)
     erode = cv2.erode(ret,(9,9),iterations=3)
     dilate = cv2.dilate(erode,(9,9),iterations=3)
-    cv_show('dilate',dilate)
-    # rets = cv2.findContours(dilate.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
-    # cv2.drawContours(face_img,rets,-1,(0,255,0),2)
-    # cv_show('face_img',face_img)
-    # rets = sorted(rets, key=cv2.contourArea, reverse=True)[0]
-    # for i in range(len(rets)):
-    #     arclen = cv2.arcLength(rets[i], True)
-    #     epsilon = max(3, int(arclen * 0.02))  # 拟合出的多边形与原轮廓最大距离，可以自己设置，这里根据轮廓周长动态设置
-    #     approx = cv2.approxPolyDP(rets[i], epsilon, False)  # 轮廓的多边形拟合
-    #     area = cv2.contourArea(rets[i])  # 计算面积
-    #     rect = cv2.minAreaRect(rets[i])
-    # box = np.int0(cv2.boxPoints(rect))  # 计算最小外接矩形顶点
-    # print(box)
-    # cv2.drawContours(img, [box], 0, (255, 0, 0), 2)
-
-
-    cv2.imshow('img',img)
-    cv2.waitKey(0)
-    # rect = mpatches.Rectangle((left2,bottom2), 1.6*width, 1.8*high,
-    #                           fill=False, edgecolor='blue', linewidth=1)
+    # cv_show('dilate',dilate)
     #
-    # ax.add_patch(rect)
-    # plt.show()
+    # cv2.imshow('img',img)
+    # cv2.waitKey(0)
+
     '''
     找身份证号码的位置
     '''
@@ -243,7 +237,7 @@ if __name__ == '__main__':
     sqlKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(15,15))
 
     tophat = cv2.morphologyEx(gray,cv2.MORPH_TOPHAT,sqlKernel)
-    cv_show('tophat',tophat)
+    # cv_show('tophat',tophat)
     gradX = cv2.Sobel(tophat,ddepth=cv2.CV_32F,dx=1,dy=0,ksize=-1)
     gradX = np.absolute(gradX)
     (minVal,maxVal) = (np.min(gradX),np.max(gradX))
@@ -259,7 +253,7 @@ if __name__ == '__main__':
     # cv_show('thresh',thresh)
 
     thresh=cv2.morphologyEx(thresh,cv2.MORPH_CLOSE,rectKernel,iterations=1)
-    cv_show('thresh',thresh)
+    # cv_show('thresh',thresh)
 
     threshCnts=cv2.findContours(thresh.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
     cnts=threshCnts
@@ -273,7 +267,7 @@ if __name__ == '__main__':
     for (i,c) in enumerate(cnts):
         (x,y,w,h)=cv2.boundingRect(c)
         ar =w/float(h)
-        print(ar,w)
+        # print(ar,w)
         # 选择合适的区域，根据实际任务来，这里的基本上都是四个数字一组
         if ar>5 and ar<40:
             if (w>350 and w<600) :
@@ -287,8 +281,8 @@ if __name__ == '__main__':
         # initialize the list of group digits
         cv2.rectangle(img,(gX-5,gY-5),(gX+gW+5,gY+gH+5),(0,0,255),2)
 
-    cv2.imshow('image',img)
-    cv2.waitKey(0)
+    # cv2.imshow('image',img)
+    # cv2.waitKey(0)
     # ax.add_patch(rect)
     # plt.show()
 
@@ -318,13 +312,13 @@ if __name__ == '__main__':
         top2 = 20
     img_copy = img.copy()
     cv2.rectangle(img, point1, point2, (0, 0, 255), 2)
-    cv2.imshow('result',img)
-    cv2.waitKey(0)
+    # cv2.imshow('result',img)
+    # cv2.waitKey(0)
     part = image_copy[top2:bottom2,left3:left2+15]
-    print((left3,top2),(left2+15,bottom2))
-    print(part.shape[:2])
-    cv2.imshow('part', part)
-    cv2.waitKey(0)
+    # print((left3,top2),(left2+15,bottom2))
+    # print(part.shape[:2])
+    # cv2.imshow('part', part)
+    # cv2.waitKey(0)
 
     retCnts = getpart_info(part)
 
@@ -385,12 +379,12 @@ if __name__ == '__main__':
           if abs(x-cut) < 30 and w > 20:
               countY.append(y)
               cv2.rectangle(img_copy, (x - 5, y - 5), (x + w + 5, y + h + 5), (0, 255, 0), 2)
-              cv_show('image', img_copy)
+              # cv_show('image', img_copy)
 
-    print('countY为',countY)
+    # print('countY为',countY)
 
     countY = selectionSort(countY)
-    print('排序后的countY为', countY)
+    # print('排序后的countY为', countY)
 
     temp = 1
     for i in range(1,len(countY)):
@@ -399,30 +393,36 @@ if __name__ == '__main__':
     if temp == 4 or temp == 5:
         box_get_front_correction(result_img, X , Y ,8 * gH, long, left2,countY[0],countY[1]
                                   ,countY[2])
+    elif temp == 6:
+        box_get_front_correction(result_img, X, Y, 8 * gH, long, left2, countY[1], countY[2]
+                                 , countY[3])
 
     else:
         box_get_front_correction(result_img, X , Y ,8 * gH, long, left2,countY[0],countY[1]
                                  ,countY[1]+60)
 
-    cv_show('image_copy',result_img)
+    # cv_show('image_copy',result_img)
+    cv2.imencode('.jpg', result_img)[1].tofile(str(save_name))
 
-    #      if (w + 10 > h) :
-    #         cv2.rectangle(img_copy, (x - 5, y - 5), (x + w + 5, y + h + 5), (0, 255, 255), 2)
-    #         cv_show('image',img_copy)
-        # if w + 10 > h and i == 3 and i == 7:
-        #     cv2.rectangle(img, (x - 5, y - 5), (x + w + 5, y + h + 5), (255, 0, 255), 2)
-        #     cv2.imshow('image', img)
-        #     cv2.waitKey(0)
+# if __name__ == '__main__':
+#
+#
+#     detector = dlib.get_frontal_face_detector()
+#     image = io.imread("C:/Users/Administrator/PycharmProjects/cread_ocr/front_cut_image/8b411130-d2cc-4500-b415-9a8823e189e3.jpeg")
+#     image = resize(image, width=800)
+#     image_copy = image.copy()
+#     dets = detector(image, 2)  # 使用detector进行人脸检测 dets为返回的结果
+#
+#     max_face, img, width, high, left2, bottom2, right2 = max_face_detect(dets,image)
+#     # cv_show('img',img)
+#     final_img = box_get_front_message(img, width, high, left2, bottom2)
+#     cv_show('final_img', final_img)
+    # face_gray = cv2.cvtColor(max_face,cv2.COLOR_BGR2GRAY)
+    # ret = cv2.threshold(face_gray,0,255,cv2.THRESH_OTSU|cv2.THRESH_BINARY_INV)[1]
+    # cv_show('ret',ret)
+    # erode = cv2.erode(ret,(9,9),iterations=3)
+    # dilate = cv2.dilate(erode,(9,9),iterations=3)
 
-        # if w + 15 > h:
-        #     #initialize the list of group digits
-        #     cv2.rectangle(img,(x-5,y-5),(x+w+5,y+h+5),(0,255,255),2)
-        #     cv2.imshow('image', img)
-        #     cv2.waitKey(0)
 
 
-
-    # cv2.imshow('image', img)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
 

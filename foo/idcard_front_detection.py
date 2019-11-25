@@ -47,6 +47,10 @@ def check_location(img, region):
         return 0
 
 
+# def box_get_front_correction():
+
+
+
 def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     """
         获取正面文字位置。先定位地址位置，再根据地址位置校正其他信息位置

@@ -12,6 +12,7 @@ from foo.tools.front_correct_skew import correct_skew, resize
 from foo.idcard_back_detection import *
 from foo.idcard_front_detection import *
 from foo.tools.address import *
+from foo.tests.idcard_front_1 import *
 
 # 加载人脸检测模型
 classfier = cv2.CascadeClassifier("../haarcascades/haarcascade_frontalface_alt2.xml")
@@ -57,16 +58,20 @@ def single_process(path, save_name):
     # path = "F:/idcard/2/2/images/C370DA4B883D4F12A607938F6B390FBE.JPG"
 
     img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), -1)
-    img = resize(img.copy(), width=500)
+    orig = img.copy()
+    img = resize(orig, width=500)
     img = face_detect(img)
     start_time = datetime.now()
     faces = detector(img, 1)
+
     if len(img.shape) == 3:
         grey = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2GRAY)
     else:
         grey = np.array(img)
+
     # 使用opencv人脸检测模型
 
+    # 人脸框位置
     faces_cv = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
     if len(faces) > 0 and len(faces_cv) > 0:
         face_rect = faces[0]
@@ -76,16 +81,13 @@ def single_process(path, save_name):
         faceRects = np.array([])
     # 判断是否是正面,大于0则检测到人脸,是正面
     # print(len(faceRects))
-    facedetect_time = datetime.now()
 
     imgWidth = 500
     imgHeight = 316
-    # img = cv2.resize(img, (imgWidth, imgHeight))
+
     is_need_correct_skew = 0
     try:
         if len(faceRects) > 0:
-            # regions = box_get_front(
-            #     copy.deepcopy(img), save_name, imgHeight, imgWidth)
             max_face = faceRects[np.where(faceRects[:, 3] == faceRects[:, 3].max())]
             regions = box_get_front_correction(
                 copy.deepcopy(img), save_name, imgHeight, imgWidth, max_face)
@@ -98,9 +100,9 @@ def single_process(path, save_name):
         print("初次定位出错，需要进行纠偏！")
         is_need_correct_skew = 1
 
+    # 需要进行纠偏，纠偏完了后进行信息的定位
     if is_need_correct_skew == 1:
         if len(faceRects) > 0:
-
             # max_face = faceRects[np.where(faceRects[:, 3] == faceRects[:, 3].max())]
             # # 根据人脸与整体图片大小的比例判断是否需要纠正
             img = correct_skew(img, 1, max_face)
@@ -110,8 +112,8 @@ def single_process(path, save_name):
         # plt.imshow(img,cmap=plt.gray())
         # plt.show()
         correct_skew_time = datetime.now()
-        imgWidth = 500
-        imgHeight = 316
+        imgWidth = 800
+        imgHeight = 506
         img = cv2.resize(img, (imgWidth, imgHeight))
 
         if len(faceRects) > 0:
@@ -120,20 +122,16 @@ def single_process(path, save_name):
             # plt.show()
             if len(faces) == 0:
                 return
-
-            face_rect = faces[0]
-
-            faceRects = np.array([[face_rect.left(), face_rect.top(), face_rect.right() - face_rect.left(),
-                                   face_rect.bottom() - face_rect.top()]])
-            max_face = faceRects[np.where(faceRects[:, 3] == faceRects[:, 3].max())]
             try:
-                box_get_front_correction(copy.deepcopy(img), save_name, imgHeight, imgWidth, max_face)
+                box_get_front_message(img, save_name)
             except Exception as e:
                 print("正面定位失败！")
         else:
             try:
+                imgWidth = 500
+                imgHeight = 316
                 # if not pre_fitline_get_back(img, save_name):
-                    box_get_back(img, save_name, imgHeight, imgWidth)
+                box_get_back(img, save_name, imgHeight, imgWidth)
             except Exception as e:
                 print("反面定位失败！")
                 pass
@@ -169,13 +167,10 @@ def face_detect(img):
         gray = cv2.cvtColor(np.array(img_rotation), cv2.COLOR_BGR2GRAY)
     else:
         gray = np.array(img_rotation)
-    # plt.imshow(gray, cmap=plt.gray())
-    # plt.show()
+
     # 使用opencv人脸检测模型
     faces_cv = classfier.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
-    # print(faces_cv)
-    # plt.imshow(img_rotation, cmap=plt.gray())
-    # plt.show()
+
     is_front = 1
     # print(len(faces_dlib) , len(faces_cv) )
     if len(faces_dlib) == 0 or len(faces_cv) == 0:

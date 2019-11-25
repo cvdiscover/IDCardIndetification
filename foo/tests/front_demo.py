@@ -151,35 +151,36 @@ def face_detect_rotation(img):
     # 加载人脸检测
     detector = dlib.get_frontal_face_detector()
     # 加载5个关键点的定位
-    predictor = dlib.shape_predictor('shape_predictor_5_face_landmarks.dat')
+    predictor = dlib.shape_predictor('C:/Users/Administrator/PycharmProjects/IDCardIndetification/foo/tools/shape_predictor_5_face_landmarks.dat')
 
     orig = img.copy()
-    img = resize(orig, height=450)
+    # img = resize(orig, width=500)
     print(img.shape)
     img1 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # 人脸检测，检测出来人脸框,2表示采样次数，得到人脸检测的大框Z
     rects = detector(img1, 2)
 
+    # 自定义旋转
     # 通过人脸检测来进行图像的旋转处理，从而进行人脸检测
-    for i in range(90, 360, 90):
-        if len(rects) == 0:
-            img1 = Image.fromarray(np.array(img))
-            rot = img1.rotate(90, expand=True)
-            img_rotation = Image.fromarray(np.array(rot))
-            img = np.array(img_rotation)
-            img1 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            rects = detector(img1, 2)
-            if len(rects) != 0:
-                break
-            else:
-                continue
+    # for i in range(90, 360, 90):
+    #     if len(rects) == 0:
+    #         img1 = Image.fromarray(np.array(img))
+    #         rot = img1.rotate(90, expand=True)
+    #         img_rotation = Image.fromarray(np.array(rot))
+    #         img = np.array(img_rotation)
+    #         img1 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #         rects = detector(img1, 2)
+    #         if len(rects) != 0:
+    #             break
+    #         else:
+    #             continue
     shape = predictor(img1, rects[0])  # 对人脸框进行关键点的定位，人脸关键点相对于框的位置
     shape = shape_to_np(shape)  # 转换成ndarray格式，转换成坐标值
-    img = resize(img, height=450)
-    ratio = img.shape[0] / 450.0
+    # img = resize(img, width=500)
+    ratio = img.shape[1] / 500.0
 
-    img3 = copy.deepcopy(img)
+    img2 = copy.deepcopy(img)
     img4 = copy.deepcopy(img)
     img5 = copy.deepcopy(img)
     img1 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -202,7 +203,7 @@ def face_detect_rotation(img):
     y1 = shape[2][1]
     x2 = shape[0][0]
     y2 = shape[0][1]
-    return shape, img1, img3, img4, img5, ratio
+    return shape, img1, img2, img4, img5, ratio
 
 # 计算图片旋转角度
 def cal_rotation_angle(img):
@@ -715,23 +716,199 @@ def classify_lines(l_limit, v_limit):
     leftline = fitline(left_vert)#左侧垂直线的拟合而成的斜率和b值
     rightline = fitline(right_vert)#右侧垂直线的拟合而成的斜率和b值
     return topline,bottomline,leftline,rightline
+#
+def distance(lines1 ,lines2):
+    k_distance = 0.5*(abs(lines1[0][0]-lines2[0][0])+abs(lines1[1][0]-lines2[1][0]))
+    b_distance = 0.5*(abs(lines1[2][1]-lines2[2][1])+abs(lines1[3][1]-lines2[3][1]))
+    return k_distance, b_distance
+
+# 在四个方案直线上选择最佳的
+def find_line_in_four(lines1, lines2, lines3, lines4):
+    '''
+    由直线的k,b值的接近程度来筛选最佳的直线
+    lines1-lines4表示4条需要比较的直线集
+    tan(3°)=0.05
+    |b1 - b2| <= 30
+    distance_ab[0]: k_distance
+    distance_ab[1]: b_distance
+    直线的优先级是lines2 > lines1 > lines4 >lines3
+    只比较
+    '''
+    distance_12 = distance(lines1, lines2)
+    distance_13 = distance(lines1, lines3)
+    distance_14 = distance(lines1, lines4)
+    distance_23 = distance(lines2, lines3)
+    distance_24 = distance(lines2, lines4)
+    distance_34 = distance(lines3, lines4)
+    if distance_12 == min(distance_12,distance_13,distance_14,distance_23,distance_24,distance_34):
+        return lines1
+    elif distance_13 == min(distance_12,distance_13,distance_14,distance_23,distance_24,distance_34):
+        return lines1
+    elif distance_14 == min(distance_12,distance_13,distance_14,distance_23,distance_24,distance_34):
+        return lines1
+    elif distance_23 == min(distance_12,distance_13,distance_14,distance_23,distance_24,distance_34):
+        return lines2
+    elif distance_24 == min(distance_12, distance_13, distance_14, distance_23, distance_24, distance_34):
+        return lines2
+    else:
+        return lines3
+
+# 在三个方案直线上选择最佳(lines1->lines3优先级由大到小)
+def find_line_in_three(lines1,lines2,lines3):
+    distance_12 = distance(lines1, lines2)
+    distance_13 = distance(lines1, lines3)
+    distance_23 = distance(lines2, lines3)
+    if distance_12 == min(distance_12, distance_13, distance_23):
+        return lines1
+    if distance_13 == min(distance_12, distance_13, distance_23):
+        return lines1
+    else:
+        return lines2
+
+# 在两个方案上选择最佳
+def find_line_in_two(lines1, lines2):
+    return lines1
 
 
-# def find_line_in_four(lines1, lines2, lines3, lines4):
-#     '''
-#     由直线的k,b值的接近程度来筛选最佳的直线
-#     lines1-lines4表示4条需要比较的直线集
-#     tan(3°)=0.05
-#     |b1 - b2| <= 30
-#     只比较
-#     '''
-#     if abs(lines1[0][0] - lines2[0][0]) <= 0.05 and abs(lines1[2][1] - lines2[2][1]) <= 30:
+# lines1为二值化，lines2为canny，lines3为grabcut1，lines4为grabcut
+def select_best_lines(lines1, lines2, lines3, lines4):
+    best_lines = []
+    # lines3不存在
+    if len(lines1) == 4 and len(lines2) == 4 and len(lines3) == 4 and len(lines4):
+        line = find_line_in_four(lines1, lines2, lines3, lines4)
+        best_lines.append(line)
+    # lines1不存在
+    if len(lines1) != 4 and len(lines2) == 4 and len(lines3) == 4 and len(lines4) == 4:
+        line = find_line_in_three(lines2, lines3, lines4)
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) != 4 and len(lines3) == 4 and len(lines4) == 4:
+        line = find_line_in_two(lines3,lines4)
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) != 4 and len(lines3) != 4 and len(lines4) == 4:
+        line = lines4
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) != 4 and len(lines3) == 4 and len(lines4) != 4:
+        line = lines3
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) == 4 and len(lines3) != 4 and len(lines4) == 4:
+        line = find_line_in_two(lines2, lines4)
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) != 4 and len(lines3) != 4 and len(lines4) == 4:
+        line = lines4
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) == 4 and len(lines3) != 4 and len(lines4) != 4:
+        line = lines2
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) == 4 and len(lines3) == 4 and len(lines4) != 4:
+        line = find_line_in_two(lines2, lines3)
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) != 4 and len(lines3) == 4 and len(lines4) != 4:
+        line = lines3
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) == 4 and len(lines3) != 4 and len(lines4) != 4:
+        line = lines2
+        best_lines.append(line)
 
 
+    # lines2不存在
+    if len(lines2) != 4 and len(lines1) == 4 and len(lines3) == 4 and len(lines4) == 4:
+        line = find_line_in_three(lines1, lines3, lines4)
+        best_lines.append(line)
+    if len(lines2) != 4 and len(lines1) != 4 and len(lines3) == 4 and len(lines4) == 4:
+        line = find_line_in_two(lines3,lines4)
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) != 4 and len(lines3) != 4 and len(lines4) == 4:
+        line = lines4
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) != 4 and len(lines3) == 4 and len(lines4) != 4:
+        line = lines3
+        best_lines.append(line)
+    if len(lines2) != 4 and len(lines1) == 4 and len(lines3) != 4 and len(lines4) == 4:
+        line = find_line_in_two(lines1, lines4)
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) != 4 and len(lines3) != 4 and len(lines4) == 4:
+        line = lines4
+        best_lines.append(line)
+    if len(lines1) == 4 and len(lines2) != 4 and len(lines3) != 4 and len(lines4) != 4:
+        line = lines1
+        best_lines.append(line)
+    if len(lines1) == 4 and len(lines2) != 4 and len(lines3) == 4 and len(lines4) != 4:
+        line = find_line_in_two(lines1, lines3)
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) != 4 and len(lines3) == 4 and len(lines4) != 4:
+        line = lines3
+        best_lines.append(line)
+    if len(lines1) == 4 and len(lines2) != 4 and len(lines3) != 4 and len(lines4) != 4:
+        line = lines1
+        best_lines.append(line)
 
-# def select_best_lines(lines1, lines2, lines3, lines4):
-#     if len(lines1) == 4 and len(lines2) == 4 and len(lines3) == 4 and len(lines4):
-#         line = find_line_in_four()
+
+    # lines3不存在
+    if len(lines3) != 4 and len(lines1) == 4 and len(lines2) == 4 and len(lines4) == 4:
+        line = find_line_in_three(lines1, lines2, lines4)
+        best_lines.append(line)
+    if len(lines3) != 4 and len(lines1) != 4 and len(lines2) == 4 and len(lines4) == 4:
+        line = find_line_in_two(lines2,lines4)
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) != 4 and len(lines3) != 4 and len(lines4) == 4:
+        line = lines4
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) == 4 and len(lines3) != 4 and len(lines4) != 4:
+        line = lines2
+        best_lines.append(line)
+    if len(lines2) != 4 and len(lines1) == 4 and len(lines3) != 4 and len(lines4) == 4:
+        line = find_line_in_two(lines1, lines4)
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) != 4 and len(lines3) != 4 and len(lines4) == 4:
+        line = lines4
+        best_lines.append(line)
+    if len(lines1) == 4 and len(lines2) != 4 and len(lines3) != 4 and len(lines4) != 4:
+        line = lines1
+        best_lines.append(line)
+    if len(lines1) == 4 and len(lines2) == 4 and len(lines3) != 4 and len(lines4) != 4:
+        line = find_line_in_two(lines1, lines2)
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) == 4 and len(lines3) != 4 and len(lines4) != 4:
+        line = lines2
+        best_lines.append(line)
+    if len(lines1) == 4 and len(lines2) != 4 and len(lines3) != 4 and len(lines4) != 4:
+        line = lines1
+        best_lines.append(line)
+
+
+    # lines4不存在
+    if len(lines4) != 4 and len(lines1) == 4 and len(lines2) == 4 and len(lines3) == 4:
+        line = find_line_in_three(lines1, lines2, lines3)
+        best_lines.append(line)
+    if len(lines2) == 4 and len(lines1) != 4 and len(lines3) == 4 and len(lines4) != 4:
+        line = find_line_in_two(lines2,lines3)
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) == 4 and len(lines3) != 4 and len(lines4) != 4:
+        line = lines2
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) != 4 and len(lines3) == 4 and len(lines4) != 4:
+        line = lines3
+        best_lines.append(line)
+    if len(lines2) != 4 and len(lines1) == 4 and len(lines3) == 4 and len(lines4) != 4:
+        line = find_line_in_two(lines1, lines3)
+        best_lines.append(line)
+    if len(lines1) == 4 and len(lines2) != 4 and len(lines3) != 4 and len(lines4) != 4:
+        line = lines1
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) != 4 and len(lines3) == 4 and len(lines4) != 4:
+        line = lines3
+        best_lines.append(line)
+    if len(lines1) == 4 and len(lines2) == 4 and len(lines3) != 4 and len(lines4) != 4:
+        line = find_line_in_two(lines1, lines2)
+        best_lines.append(line)
+    if len(lines1) != 4 and len(lines2) == 4 and len(lines3) != 4 and len(lines4) != 4:
+        line = lines2
+        best_lines.append(line)
+    if len(lines1) == 4 and len(lines2) != 4 and len(lines3) != 4 and len(lines4) != 4:
+        line = lines1
+        best_lines.append(line)
+    return best_lines
+
 
 
 # 由拟合直线的斜率k和b计算四条直线的四个交点
