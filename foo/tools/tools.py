@@ -2,11 +2,7 @@ import cv2
 import matplotlib.pylab as plt
 import numpy as np
 import copy
-import os
-import skimage.transform.radon_transform as transform
 import math
-from PIL import Image
-from datetime import datetime
 
 
 def get_u_d_l_r(rect):
@@ -173,9 +169,6 @@ def project(img_binary, orientation=0, is_show = 0):
             # for i in range(0, int(horizontal_count[j])):
             #     thresh_copy[j, i] = 0
             thresh_copy[j, 0:int(horizontal_count[j])] = 0
-        if is_show:
-            plt.imshow(thresh_copy, cmap=plt.gray())
-            plt.show()
     else:
         # vertical_count = np.array([0 for z in range(0, w)])
         # # 每列白色像素个数
@@ -187,13 +180,11 @@ def project(img_binary, orientation=0, is_show = 0):
             # for i in range((h - int(vertical_count[j])), h):  # 从该列应该变黑的最顶部的点开始向最底部涂黑
             #     thresh_copy[i, j] = 0  # 涂黑
             thresh_copy[(h - int(vertical_count[j])): h, j] = 0
-        if is_show:
-            plt.imshow(thresh_copy, cmap=plt.gray())
-            plt.show()
     return count
 
 
 def check_idnumber(img):
+
     imgHeight, imgWidth = 316, 500
     id_y = int(imgHeight / 1.3)
     id_x = int(imgWidth / 3.06)

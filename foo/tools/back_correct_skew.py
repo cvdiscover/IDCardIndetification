@@ -7,6 +7,7 @@ import math
 from PIL import Image
 from datetime import datetime
 from foo.tools.tools import *
+from foo.tools.config import *
 
 
 def extract_peek_ranges_from_array(array_vals, minimun_val=10, minimun_range=2):
@@ -135,7 +136,6 @@ def mark_corner_image(img, point_size = 3):
         # if y < 329 + 1.5 * 74 or y > 329 + 2.5 * 74:
         #     continue
         corners_list.append([x, y])
-        #cv2.circle(img, (x, y), 3, (0, 0, 255), -1)
         cv2.circle(img_mark, (x, y), point_size, (255, 255, 255), -1)
 
 
@@ -149,6 +149,18 @@ def correct_image(img):
     :return: 纠正后的图片、（中华人民共和国位置）、（有效日期位置）
     """
     angle = cal_rotation_angle(img)
+    if 77 < angle < 103:
+        angle = 90
+        img_im = Image.fromarray(img)
+        img_correction = np.array(img_im.rotate(angle, expand=True))
+        if is_debug == 1:
+            print('correct：90°')
+            cv2.imshow("img_correction", img_correction)
+            cv2.waitKey(0)
+    else:
+        img_correction = img
+        print('No correct')
+
     img_im = Image.fromarray(img)
     img_correction = np.array(img_im.rotate(angle, expand=True))
     # 双边均值滤波

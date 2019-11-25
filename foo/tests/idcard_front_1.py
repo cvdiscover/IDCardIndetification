@@ -194,7 +194,7 @@ def box_get_front_message(image, save_name):
     dets = detector(image, 2)  # 使用detector进行人脸检测 dets为返回的结果
     # 将识别的图像可视化
 
-    predictor = dlib.shape_predictor("C:/Users/Administrator/PycharmProjects/IDCardIndetification/foo/tools/shape_predictor_5_face_landmarks.dat")
+    predictor = dlib.shape_predictor("tools/shape_predictor_5_face_landmarks.dat")
 
     left = dets[0].left()
     top = dets[0].top()

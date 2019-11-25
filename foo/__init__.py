@@ -91,7 +91,8 @@ def single_process(path, save_name):
                 copy.deepcopy(img), save_name, imgHeight, imgWidth, max_face)
             is_need_correct_skew = check_location(img, regions)
         else:
-            if not pre_fitline_get_back(orig.copy(), save_name):
+            img = resize(orig.copy(), width=500)
+            if not pre_fitline_get_back(img.copy(), save_name):
                 is_need_correct_skew = 1
 
     except Exception as e:
@@ -126,9 +127,6 @@ def single_process(path, save_name):
                 print("正面定位失败！")
         else:
             try:
-                # imgWidth = 500
-                # imgHeight = 316
-                # if not pre_fitline_get_back(img, save_name):
                 box_get_back(img, save_name, 316, 500)
             except Exception as e:
                 print("反面定位失败！")

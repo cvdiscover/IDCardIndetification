@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pylab as plt
 import math
 import os
-import matplotlib.pylab as plt
 import dlib
 from PIL import Image
 from datetime import datetime
@@ -258,7 +257,7 @@ def find_information(result, img):
         plt.show()
 
     # 阈值设置为80可以有效地去除大部分边框和国徽
-    thresh = cv2.adaptiveThreshold(cv2.cvtColor(result, cv2.COLOR_BGR2GRAY), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 25, 5)
+    thresh = cv2.adaptiveThreshold(cv2.cvtColor(result, cv2.COLOR_BGR2GRAY), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 5)
     if is_debug == 1:
         cv2.imshow("thresh o", thresh)
         cv2.waitKey(0)
@@ -273,7 +272,7 @@ def find_information(result, img):
         cv2.waitKey(0)
 
     # 开操作
-    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 1))
+    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 1))
     canny = cv2.dilate(canny, kernelX)
     morphologyEx = open_demo(canny)
     # 闭操作
@@ -285,7 +284,7 @@ def find_information(result, img):
         cv2.waitKey(0)
 
     # 膨胀腐蚀
-    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 1))
+    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 1))
     kernelY = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 1))
     Element = cv2.dilate(morphologyEx, kernelX)
     Element = cv2.dilate(Element, kernelY)
@@ -297,7 +296,7 @@ def find_information(result, img):
         cv2.waitKey(0)
 
     # 闭操作
-    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 1))
+    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 1))
     morphologyEx = cv2.morphologyEx(Element, cv2.MORPH_CLOSE, kernelX)
 
     if is_debug == 1:

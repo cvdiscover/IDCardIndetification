@@ -20,7 +20,6 @@ from foo.tests.front_demo import fitline
 from foo.tests.front_demo import line_area
 from foo.tests.front_demo import select_best_lines
 from foo.tests.front_demo import find_cross_point1
-from foo.tests.front_demo import *
 
 
 # from predict_location import predict_location
@@ -147,8 +146,6 @@ def get_id_by_binary(img, face_rect):
 
         box = [[x1, y2], [x1, y1], [x2, y1], [x2, y2]]
         cv2.drawContours(img, np.array([box]), 0, (0, 255, 0), 2)
-        plt.imshow(img, cmap=plt.gray())
-        plt.show()
 
 
     id_rect_minArea = [[id_rect[0] + id_rect[2] // 2, id_rect[1] + id_rect[3] // 2], [id_rect[2], id_rect[3]], 0]
@@ -1477,7 +1474,11 @@ def front_correct_skew(img):
     """
     # img = img[5:-5, 5: -5]
     # 导入grabcut1的函数
-
+    from foo.tests.front_demo import grabcut_correct
+    from foo.tests.front_demo import classify_lines
+    from foo.tests.front_demo import predict_rect
+    from foo.tests.front_demo import face_detect_rotation
+    from foo.tests.front_demo import find_cross_point1
 
     img2 = copy.deepcopy(img)
     img3 = copy.deepcopy(img)
@@ -1553,7 +1554,13 @@ def front_correct_skew(img):
     except Exception as e:
         best_lines_by_contour = []
 
-
+    # lines_by_grabcut = get_border_by_grabcut(img.copy(), predict_border_lines)
+    # top_lines, bottom_lines, left_lines, right_lines = filter_and_classify_lines(img.copy(), lines_by_grabcut,
+    #                                                                              img2.copy(),
+    #                                                                              face_rect)
+    # # best_lines_by_grabcut = get_best_line_by_prediction(top_lines, bottom_lines, left_lines, right_lines,
+    # #                                                     predict_border_lines, img.copy())
+    # best_lines_by_grabcut = select_border_lines_by_max_contour(top_lines, bottom_lines, left_lines, right_lines,img.copy())
     try:
         lines_by_grabcut = get_border_by_grabcut(img.copy(), copy.deepcopy(predict_border_lines))
         top_lines, bottom_lines, left_lines, right_lines = filter_and_classify_lines(img.copy(), lines_by_grabcut, img2.copy(),
@@ -1565,21 +1572,38 @@ def front_correct_skew(img):
     except Exception as e:
         best_lines_by_grabcut = []
 
+    try:
+        shape, img1, img3, img4, img5, ratio = face_detect_rotation(img)
+        lt_x, lt_y, leng, wid = predict_rect(img1, img3, shape)
+        l_limit,v_limit = grabcut_correct(img3, lt_x, lt_y, leng, wid)
+        top_line, bottom_line, left_line, right_line = classify_lines(l_limit,v_limit)
+        t_l_point, t_r_point, b_l_point, b_r_point = find_cross_point1(top_line,bottom_line,left_line,right_line)
+
+    except Exception as e:
+        best_lines_by_grabcut = []
+    #test_point(img.copy(), best_lines_by_canny, best_lines_by_contour, best_lines_by_grabcut)
 
     best_lines = select_best_border(id_rect, best_lines_by_canny, best_lines_by_contour, best_lines_by_grabcut)
 
 
-    top = best_lines[0]
-    bottom = best_lines[1]
-    left = best_lines[2]
-    right = best_lines[3]
+    if len(best_lines) != 0:
+        # 计算交点
+        # print(best_lines)
+        top = best_lines[0]
+        bottom = best_lines[1]
+        left = best_lines[2]
+        right = best_lines[3]
 
-    t_l_point = find_cross_point(top, left)
-    t_r_point = find_cross_point(top, right)
-    b_l_point = find_cross_point(bottom, left)
-    b_r_point = find_cross_point(bottom, right)
-    return t_l_point, t_r_point, b_l_point, b_r_point, img2
+        t_l_point = find_cross_point(top, left)
+        t_r_point = find_cross_point(top, right)
+        b_l_point = find_cross_point(bottom, left)
+        b_r_point = find_cross_point(bottom, right)
+        return t_l_point, t_r_point, b_l_point, b_r_point, img2
 
+    # 返回的是第二个grabcut的点
+    if len(best_lines) == 0:
+
+        return t_l_point, t_r_point, b_l_point, b_r_point, img2
 
 
 # 根据斜率k和b选择最佳直线的正面纠偏
@@ -1642,8 +1666,6 @@ def front_correct_skew1(img):
         for line in predict_border_lines:
             x1, y1, x2, y2 = line
             cv2.line(img2, (x1, y1), (x2, y2), (255, 0, 0), 5)
-        plt.imshow(img2)
-        plt.show()
     # cv2.imshow("pred_line", img2)
     # cv2.waitKey(0)
 
@@ -1768,9 +1790,7 @@ def correct_skew(img, is_front, max_face=[0, 0, 0, 0]):
             l1 = grabcut_correct(img2, lt_x, lt_y, leng, wid)
             l_limit, v_limit = line_area(l1, lt_x, lt_x + leng, lt_y, lt_y + wid)
             top_line, bottom_line, left_line, right_line = classify_lines(l_limit, v_limit)
-            t_l_point, t_r_point, b_l_point, b_r_point = find_cross_point1(top_line, bottom_line, left_line,
-                                                                           right_line)
-
+            t_l_point, t_r_point, b_l_point, b_r_point = find_cross_point1(top_line, bottom_line, left_line, right_line)
 
 
         # 用红色画出四个顶点
@@ -1783,6 +1803,10 @@ def correct_skew(img, is_front, max_face=[0, 0, 0, 0]):
         cv2.line(img, (b_r_point[0],b_r_point[1]), (b_l_point[0],b_l_point[1]), (255, 0, 0), 3)
         cv2.line(img, (b_l_point[0],b_l_point[1]), (t_l_point[0],t_l_point[1]), (255, 0, 0), 3)
 
+        # cv2.line(img2, t_l_point, t_r_point, (255, 255, 255), 1)
+        # cv2.line(img2, b_r_point, t_r_point, (255, 255, 255), 1)
+        # cv2.line(img2, b_r_point, b_l_point, (255, 255, 255), 1)
+        # cv2.line(img2, b_l_point, t_l_point, (255, 255, 255), 1)
         if is_debug == 1:
             plt.imshow(img)
             plt.show()
