@@ -59,6 +59,7 @@ def cal_rotation_angle(img):
     :param img: 图片
     :return:旋转角度
     """
+
     img_mark = mark_corner_image(img, point_size = 3)
     # 投影计算角度，对图片进行纠正
     from src.com.tools import project
@@ -108,6 +109,7 @@ def correct_image(img):
     :param img: 图片
     :return: 纠正后的图片、（中华人民共和国位置）、（有效日期位置）
     """
+
     angle = cal_rotation_angle(img)
     if 77 < angle < 103:
         angle = 90
@@ -171,7 +173,6 @@ def correct_image(img):
         rects.append(rect)
         rects_m.append(rect_m)
 
-        # cv2.drawContours(img_filter, cnt, 0, (255, 255, 255), 1)
     rects = np.array(rects)
     text1_index = np.where(rects[:, 1]==rects[:, 1].min())
     text1 = rects_m[text1_index[0][0]]
@@ -180,8 +181,6 @@ def correct_image(img):
     text2 = rects_m[text2_index[0][0]]
 
     rects = np.array(rects)
-    # plt.imshow(img_dilate, cmap=plt.gray())
-    # plt.show()
     y_mean = rects[:, 1].mean()
     max_rect = rects[np.where(rects[:, 2] == rects[:, 2].max())]
 
@@ -197,7 +196,9 @@ def get_lines(img):
     img2 = img.copy()
     from src.front_correct_skew import get_border_by_canny
     lines = get_border_by_canny(img)
-    horizontal, vertical = [], []  # 创建水平和垂直线list
+
+    # 创建水平和垂直线list
+    horizontal, vertical = [], []
     lines_2d_original = lines[:, 0, :]
     lines_2d = []
     for line in lines_2d_original:
@@ -259,7 +260,6 @@ def back_correct_skew(img):
     # 计算竖线平均倾斜角
     predict__vertical_angle = 90 - abs(mean__horizontal_angle)
     # 获取与估计位置较近的水平线
-    # print(predict__vertical_angle)
     d_l_min = w
     d_r_min = w
     for line in vertical:

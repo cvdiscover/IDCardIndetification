@@ -5,14 +5,12 @@ from src.com.tools import *
 
 def box_get_back(img, save_name, imgHeight, imgWidth):
     """
-        获取反面文字位置
-        :param img: 图片
-        :param imgHeight: 图片高度
-        :param imgWidth: 图片宽度
-        :param index: 图片序号
-        :return: 文字切片
-
-        """
+    获取反面文字位置
+    :param img: 图片
+    :param imgHeight: 图片高度
+    :param imgWidth: 图片宽度
+    :return: 文字切片
+    """
     regions = []
     # 签发机关
     issuing_authority_height = int(imgHeight / 1.5)
@@ -66,11 +64,11 @@ def box_get_back(img, save_name, imgHeight, imgWidth):
 
 def get_regions(img, scale, is_address=0, is_name=0, is_date=0, is_front = 1, is_consider_color = 1):
     """
-        对单块区域处理后，获取文文本位置
-        :param img: 图片
-        :param is_address: 是否是地址
-        :return: 文本位置
-        """
+    对单块区域处理后，获取文文本位置
+    :param img: 图片
+    :param is_address: 是否是地址
+    :return: 文本位置
+    """
     img = img.copy()
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_gray = cv2.medianBlur(img_gray, 5)
@@ -107,11 +105,11 @@ def get_regions(img, scale, is_address=0, is_name=0, is_date=0, is_front = 1, is
 
 def find_word_regions(img, is_address=0, is_name=0, is_date=0):
     """
-       获取一个二值图片中的文本位置
-       :param img: 图片
-       :param is_address: 是否是地址
-       :return: 文本位置
-           """
+    获取一个二值图片中的文本位置
+    :param img: 图片
+    :param is_address: 是否是地址
+    :return: 文本位置
+    """
     regions = []
     # 1. 查找轮廓
     _, contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -473,6 +471,7 @@ def predict_edge(dst, img_w, img_h):
     :param dst: 国徽的位置
     :return: 返回预估的四个角点 顺序为左下 右下 右上 左上
     """
+
     # gh_points 顺序为左上 左下 右下 右上 以下称为1， 2， 3， 4
     gh_points = [(dst[0][0][0], dst[0][0][1]), (dst[1][0][0], dst[1][0][1]), (dst[2][0][0], dst[2][0][1]),
                  (dst[3][0][0], dst[3][0][1])]
@@ -535,6 +534,7 @@ def extend_line_bykb(k1, b1, k2, b2):
     :param b2: 两条直线的偏移量
     :return: 两直线交点
     """
+
     if k1 == k2:
         return False
     if k1 is not None and k2 is not None:
@@ -557,11 +557,12 @@ def extend_line_bykb(k1, b1, k2, b2):
 # 传入四个点进行透视变换
 def perspective_transformation(points, flag, src):
     """
-        传入四个点进行透视变换
-        :param flag: fitline: 直线检测拟合结果 else：pre预估结果
-        :param points: 包含四个点的点集
-        :return: 两直线交点
-        """
+    传入四个点进行透视变换
+    :param flag: fitline: 直线检测拟合结果 else：pre预估结果
+    :param points: 包含四个点的点集
+    :return: 两直线交点
+    """
+
     if flag is "fitline":
         # p1-右下  p2-左下  p3-右上  p4-左上
         p1, p2, p3, p4 = points
@@ -603,6 +604,7 @@ def cal_distance(x1, y1, x2, y2, x3, y3):
     :param y3:
     :return:
     """
+
     area = 1 / 2 * abs((x1 * y2 - x2 * y1) + (x2 * y3 - x3 * y2) + (x3 * y1 - y3 * x1))
     length = math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
     if length != 0:
@@ -620,6 +622,7 @@ def fit_line(image, fit_points, ori):
     :param image:处理后的图像
     :return: 直线拟合后的四个点
     """
+
     result = ori.copy()
     _, contours, hair = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = sorted(contours, key=cv2.contourArea, reverse=True)
@@ -707,6 +710,7 @@ def image_select(after_cut_image):
     :param after_cut_image: 裁剪后视为准确的图像
     :return: 上版部分置为白色消除部分干扰
     """
+
     H, W = after_cut_image.shape[:2]
     ymin, ymax, xmin, xmax = int(H / 2), 480, 0, W
     after_cut_image = after_cut_image[ymin: ymax, xmin: xmax]
@@ -727,6 +731,7 @@ def len_judge(img, dst):
                                      2-右下角点，       3-右上角点
     :return: 适用返回True, 不适用返回False
     """
+
     len_max = (max(img.shape[:2]) * 129 / 636) * 1.3
     len_min = (max(img.shape[:2]) * 129 / 636) * 0.3
 

@@ -351,7 +351,7 @@ def predict_rect(gray, scr, shape):
             detect_id = []
             detect_id.append([gX - 3, gY - 3, gX + gW + 3, gY + gH + 3])
 
-    #预估grabcut的rect值
+    # 预估grabcut的rect值
     if len(locs) == 0:
         leng = abs(11.5 * (shape[0][0] - shape[2][0]))
     else:
@@ -587,7 +587,7 @@ def find_line_in_four(lines1, lines2, lines3, lines4):
 
 
 # 在三个方案直线上选择最佳(lines1->lines3优先级由大到小)
-def find_line_in_three(lines1,lines2,lines3):
+def find_line_in_three(lines1, lines2, lines3):
     """
     :param lines1: 直线1
     :param lines2: 直线2
@@ -826,7 +826,7 @@ def find_cross_point(line1, line2):
     :param line2: 直线二两端点坐标
     :return: 交点坐标
     """
-    x1 = line1[0]  # 取四点坐标
+    x1 = line1[0]
     y1 = line1[1]
     x2 = line1[2]
     y2 = line1[3]
@@ -838,14 +838,20 @@ def find_cross_point(line1, line2):
 
     if x2 == x1:
         return False
-    k1 = (y2 - y1) * 1.0 / (x2 - x1)  # 计算k1,由于点均为整数，需要进行浮点数转化
-    b1 = y1 * 1.0 - x1 * k1 * 1.0  # 整型转浮点型是关键
 
-    if (x4 - x3) == 0:  # L2直线斜率不存在操作
+    # 计算k1,由于点均为整数，需要进行浮点数转化
+    k1 = (y2 - y1) * 1.0 / (x2 - x1)
+
+    # 整型转浮点型是关键
+    b1 = y1 * 1.0 - x1 * k1 * 1.0
+
+    # L2直线斜率不存在操作
+    if (x4 - x3) == 0:
         k2 = None
         b2 = 0
     else:
-        k2 = (y4 - y3) * 1.0 / (x4 - x3)  # 斜率存在操作
+        # 斜率存在操作
+        k2 = (y4 - y3) * 1.0 / (x4 - x3)
         b2 = y3 * 1.0 - x3 * k2 * 1.0
     if k2 == None:
         x = x3
@@ -914,7 +920,8 @@ def get_id_by_binary(img, face_rect):
     for i in range(len(contours)):
         cnt = contours[i]
         rect = cv2.boundingRect(cnt)
-        # # 计算高和宽
+
+        # 计算高和宽
         width = rect[2]
         hight = rect[3]
 
@@ -957,7 +964,7 @@ def get_id_by_corner(img, max_face):
         cv2.circle(img_mark, (x, y), 3, (0, 0, 255), -1)
 
     # 显示原图和处理后的图像
-    img_mark_gray = img_mark[:, :, 2]  # cv2.cvtColor(img_mark, cv2.COLOR_BGR2GRAY)
+    img_mark_gray = img_mark[:, :, 2]
     img_mark_gray = cv2.medianBlur(img_mark_gray, 7)
 
     if max_face[2] > 70:
@@ -974,13 +981,15 @@ def get_id_by_corner(img, max_face):
     regions_2 = []
     for i in range(len(contours_sorted)):
         cnt = contours_sorted[i]
+
         # 计算该轮廓的面积
         area = cv2.contourArea(cnt)
+
         # 面积小的都筛选掉
-        if (area < 800):
+        if area < 800:
             continue
         rect = cv2.minAreaRect(cnt)
-        if (rect[0][1] < (max_face[1] + 1.5 * max_face[3])):
+        if rect[0][1] < (max_face[1] + 1.5 * max_face[3]):
             continue
         if (rect[2] < -45 and rect[1][1] / rect[1][0] < 5) or (-45 < rect[2] < 0 and rect[1][0] / rect[1][1] < 5):
 
@@ -1021,11 +1030,18 @@ def get_border_by_sobel(img):
     img3 = cv2.GaussianBlur(img, (5, 5), 0)
     img_gray = cv2.cvtColor(img3, cv2.COLOR_BGR2GRAY)
     _, img_binary = cv2.threshold(img_gray, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY_INV)
-    _, contours, hierarchy = cv2.findContours(img_binary, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)  # 查找轮廓
-    _, contours = sorted(contours, key=cv2.contourArea, reverse=True)  # 按面积排序
 
-    fill = cv2.rectangle(img_binary.copy(), (0, 0), (img.shape[1], img.shape[0]), (0, 0, 0), -1)  # 将图片涂黑
-    fill = cv2.drawContours(fill.copy(), contours, 0, (255, 255, 255), -1)  # 将最大轮廓涂白
+    # 查找轮廓
+    _, contours, hierarchy = cv2.findContours(img_binary, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
+
+    # 按面积排序
+    _, contours = sorted(contours, key=cv2.contourArea, reverse=True)
+
+    # 将图片涂黑
+    fill = cv2.rectangle(img_binary.copy(), (0, 0), (img.shape[1], img.shape[0]), (0, 0, 0), -1)
+
+    # 将最大轮廓涂白
+    fill = cv2.drawContours(fill.copy(), contours, 0, (255, 255, 255), -1)
     x = cv2.Sobel(fill, cv2.CV_16S, 1, 0, ksize=3)
     y = cv2.Sobel(fill, cv2.CV_16S, 0, 1, ksize=3)
 
@@ -1041,6 +1057,7 @@ def get_border_by_sobel(img):
 def predict_location(land_mark, face, id_rect):
     """
     根据人眼睛鼻子眉心位置，估算身份证边界位置
+    :param id_rect:
     :param land_mark:左眼右眼眉心鼻子位置
     :param face:人脸位置左上角点坐标及高宽
     :return:
@@ -1114,6 +1131,7 @@ def predict_location(land_mark, face, id_rect):
 def get_border_by_canny(img, is_filter=0):
     """
     使用canny算子计算图像的梯度，并进行hough直线检测
+    :param is_filter:
     :param img:
     :return:
     """
