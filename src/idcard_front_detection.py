@@ -1,19 +1,30 @@
+from src.config.config import *
+from src.com.tools import *
 import cv2
-import copy
-import numpy as np
-import matplotlib.pylab as plt
-import math
-import os
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
 import dlib
-from PIL import Image
-from datetime import datetime
-from foo.tools.back_correct_skew import back_correct_skew
-from foo.tools.config import *
-from foo.tools.tools import *
+import numpy as np
 
 
-# from foo.tools.front_tools import *  #  稍后进行测试
+# 根据长宽比比例进行大小调整
+def resize(image, width=None, height=None, inter=cv2.INTER_AREA):#插值方法选用基于局部像素的重采样
+    dim = None
+    (h, w) = image.shape[:2]  #image.shape[0]指图片长（垂直尺寸），image.shape[1]指图片宽（水平尺寸）
+    if width is None and height is None:
+        return image
+    if width is None:
+        r = height / float(h)  #h为真实高度，height为设定高度0
+        dim = (int(w * r), height)  #dim括号内的是按比例调整后的长和宽
+    else:
+        r = width / float(w)  #为真实宽度，width为设定宽度
+        dim = (width, int(h * r))
+    resized = cv2.resize(image, dim, interpolation=inter)  #interpolation为插值方法，缩写inter
+    return resized
+
+
+def cv_show(name, img):
+    cv2.imshow(name,img)
+    cv2.waitKey(0)
 
 
 def check_location(img, region):
@@ -23,7 +34,6 @@ def check_location(img, region):
     :param region: 各信息位置
     :return:
     """
-    # print(regions, regions[0][0][2])
 
     if region[0][0][3] < 15 or region[0][0][3] > 30 or region[0][0][2] < 25:
         return 1
@@ -41,25 +51,21 @@ def check_location(img, region):
         return 1
     elif img.shape[0] / img.shape[1] < 290 / 500 or img.shape[0] / img.shape[1] > 350 / 500:
         return 1
-    elif region[7][0][1] + 1/2* region[7][0][3] <  region[8][0][1] + region[8][0][3]:
+    elif region[7][0][1] + 1/2* region[7][0][3] < region[8][0][1] + region[8][0][3]:
         return 1
     else:
         return 0
 
 
-# def box_get_front_correction():
-
-
-
 def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     """
-        获取正面文字位置。先定位地址位置，再根据地址位置校正其他信息位置
-        :param img: 图片
-        :param imgHeight: 图片高度
-        :param imgWidth: 图片宽度
-        :param face_rect: 人脸位置
-        :return: 文字位置
-        """
+    获取正面文字位置。先定位地址位置，再根据地址位置校正其他信息位置
+    :param img: 图片
+    :param imgHeight: 图片高度
+    :param imgWidth: 图片宽度
+    :param face_rect: 人脸位置
+    :return: 文字位置
+    """
 
     regions = []
 
@@ -69,33 +75,25 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     photo_y1 = face_rect[0][1] - 40
     photo_y2 = face_rect[0][1] + face_rect[0][3] + 60
     photo_cut = img[photo_y1:photo_y2, photo_x1:photo_x2]
-    img=cv2.rectangle(img,(photo_x1,photo_y1),(photo_x2,photo_y2),(0,0,255),2)
+    img=cv2.rectangle(img, (photo_x1, photo_y1), (photo_x2, photo_y2), (0, 0, 255), 2)
     if is_debug ==1:
         plt.imshow(img,cmap=plt.gray())
-        #plt.imshow(photo_cut, cmap=plt.gray())
         plt.show()
     photo_region = get_photo_position(photo_cut)
     photo_region[0][0] += photo_x1
     photo_region[0][1] += photo_y1
 
-
     # 地址
     address_y = int(imgHeight / 2.11)
     address_x = 87
     address_addHeight = int(address_y + imgHeight / 3.17)
-    # address_addWidth = int(address_x + 230)
-    #address_addWidth = face_rect[0][0] + int(face_rect[0][2] / 2) - 78
     address_addWidth = photo_region[0][0]
     address = img[address_y:address_addHeight, address_x:address_addWidth]
     img = cv2.rectangle(img, (address_x, address_y), (address_addWidth, address_addHeight), (0, 0, 255), 2)
-    #plt.imshow(img, cmap=plt.gray())
-    #plt.show()
     try:
-        # address_region = get_regions(address, 1, 1)
-        # if len(address_region) == 0:
         address_region = get_regions(address, 1, 1, is_consider_color=0)
     except Exception as e:
-        address_region = get_regions(address, 1, 1, is_consider_color = 0)
+        address_region = get_regions(address, 1, 1, is_consider_color=0)
     for i in range(len(address_region)):
         address_region[i][0] += address_x
         address_region[i][1] += address_y
@@ -103,16 +101,11 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
 
     # 名字
     name_y = int(imgHeight / 10.8) - 10
-    # name_width = int(imgWidth / 5.7)
     name_x = left_position
     name_addHeight = int(name_y + 46) + 10
     name_addWidth = int(name_x + imgWidth / 4)
     name = img[name_y:name_addHeight, name_x:name_addWidth]
     img = cv2.rectangle(img, (name_x, name_y), (name_addWidth, name_addHeight), (0, 0, 255), 2)
-    #plt.imshow(name, cmap=plt.gray())
-    #plt.show()
-    # scale = int(img.shape[1] / 500)
-    # print(scale, img.shape)
     try:
         name_region = get_regions(name, 1, is_name=1)
         if len(name_region) == 0:
@@ -130,8 +123,6 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     sex_addWidth = int(sex_x + 45)
     sex = img[sex_y:sex_addHeight, sex_x:sex_addWidth]
     img = cv2.rectangle(img, (sex_x, sex_y), (sex_addWidth, sex_addHeight), (0, 0, 255), 2)
-    #plt.imshow(sex, cmap=plt.gray())
-    #plt.show()
     try:
         sex_region = get_regions(sex, 1)
         if len(sex_region) == 0:
@@ -142,7 +133,6 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     sex_region[0][0] += sex_x
     sex_region[0][1] += sex_y
     regions.append(sex_region)
-    # cv2.imwrite(str(PATH) + '\\' + "sex.png", sex)
 
     # 民族
     nationality_y = int(imgHeight / 4.5)
@@ -151,8 +141,6 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     nationality_addWidth = int(nationality_x + 50)
     nationality = img[nationality_y:nationality_addHeight, nationality_x:nationality_addWidth]
     img = cv2.rectangle(img, (nationality_x, nationality_y), (nationality_addWidth, nationality_addHeight), (0, 0, 255), 2)
-    # plt.imshow(nationality, cmap=plt.gray())
-    # plt.show()
     try:
         nationality_region = get_regions(nationality, 1)
         if len(nationality_region) == 0:
@@ -171,8 +159,6 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     birth_year_addWidth = int(birth_year_x + 68)
     birth_year = img[birth_year_y:birth_year_addHeight, birth_year_x:birth_year_addWidth]
     img = cv2.rectangle(img, (birth_year_x, birth_year_y), (birth_year_addWidth, birth_year_addHeight), (0, 0, 255), 2)
-    # plt.imshow(birth_year, cmap=plt.gray())
-    # plt.show()
     try:
         birth_year_region = get_regions(birth_year, 1, is_date=1)
         if len(birth_year_region) == 0:
@@ -203,15 +189,12 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     regions.append(birth_month_region)
 
     # 生日 日
-
     birth_day_y = int(imgHeight / 2.84)
     birth_day_x = left_position + 125
     birth_day_addHeight = int(birth_day_y + imgHeight / 7.71)
     birth_day_addWidth = int(birth_day_x + 37)
     birth_day = img[birth_day_y:birth_day_addHeight, birth_day_x:birth_day_addWidth]
     img = cv2.rectangle(img, (birth_day_x, birth_day_y), (birth_day_addWidth, birth_day_addHeight), (0, 0, 255), 2)
-    # plt.imshow(birth_day, cmap=plt.gray())
-    # plt.show()
     try:
         birth_day_region = get_regions(birth_day, 1, is_date=1)
         if len(birth_day_region) == 0:
@@ -226,51 +209,30 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     regions.append(address_region)
 
     # 身份证号码
-
     id_y = int(imgHeight / 1.3)
     id_x = int(imgWidth / 3.06)
     id_addHeight = int(id_y + imgHeight / 6.70)
     id_addWidth = int(id_x + 322)
     id = img[id_y:id_addHeight, id_x:id_addWidth]
     img = cv2.rectangle(img, (id_x, id_y), (id_addWidth, id_addHeight), (0, 0, 255), 2)
-    # plt.imshow(id, cmap=plt.gray())
-    # plt.show()
     try:
-        # id_region = get_regions(id, 1)
-        # if len(id_region) == 0:
         id_region = get_regions(id, 1, is_consider_color = 0)
     except Exception as e:
         id_region = get_regions(id, 1, is_consider_color=0)
     id_region[0][0] += id_x
     id_region[0][1] += id_y
     regions.append(id_region)
-    # plt.imshow(birth_year, cmap=plt.gray())
-    # plt.show()
-    # 照片
-    # photo_y = int(imgHeight / 6)
-    # photo_x = int(imgWidth / 1.6)
-    # photo_addHeight = int(photo_y + imgHeight / 1.7)
-    #
-    # photo_addWidth = int(photo_x + imgWidth / 3.2)
-    # photo = img[photo_y:photo_addHeight, photo_x:photo_addWidth]
-    # print(photo_y,photo_addHeight, photo_x,photo_addWidth)
-
-    # regions.append(
-    #     np.array([[photo_x, photo_y, photo_addWidth - photo_x, photo_addHeight - photo_y]]))
-    # regions.append(
-    #     np.array([[face_rect[0][0]-15, face_rect[0][1]-40, face_rect[0][2]+40, face_rect[0][3]+60]]))
     regions.append(photo_region)
 
     regions = complete_box(regions)
     img_copy = copy.deepcopy(img)
     for i in range(len(regions)):
+
         # rect[0],rect[1],rect[2],rect[3]  分别为矩形左上角点的横坐标，纵坐标，宽度，高度
         for j in range(len(regions[i])):
             rect = regions[i][j]
             x1, x2 = rect[0], rect[0] + rect[2]
             y1, y2 = rect[1], rect[1] + rect[3]
-            # print(w1,h1,w2,h2)
-            # w1, h1, w2, h2 =  8,4,256,49
             box = [[x1, y2], [x1, y1], [x2, y1], [x2, y2]]
             cv2.drawContours(img_copy, np.array([box]), 0, (0, 255, 0), 1)
     if is_debug == 1:
@@ -282,13 +244,11 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
 
 def get_photo_position(img):
     """
-
-    :param img:
-    :return:
+    :param img:原图
+    :return:返回身份证相片框
     """
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_gray_blur = cv2.GaussianBlur(img_gray, (7, 7), 1)
-    # edges = cv2.Canny(img_gray, 10, 100, apertureSize=3)  # Canny算子边缘检测
     edges = cv2.Canny(img_gray_blur, 70, 20)  # Canny算子边缘检测
     _, img_binary = cv2.threshold(img_gray, 128, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     img_contour = img_binary | edges
@@ -296,10 +256,6 @@ def get_photo_position(img):
     erode_elment = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
     dilate_elment = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     img_dilate = cv2.dilate(img_contour, dilate_elment, iterations=1)
-    #img_erode = cv2.erode(img, erode_elment, iterations=1)
-
-
-    # res,contours,hi = cv2.findContours(img_dilate, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
     _, contours, _ = cv2.findContours(img_dilate, cv2.RETR_EXTERNAL , cv2.CHAIN_APPROX_SIMPLE)
     contours_sorted = sorted(contours, key=cv2.contourArea, reverse=True)
 
@@ -319,14 +275,11 @@ def get_photo_position(img):
 def complete_box(regions):
     """
     补全缺损的矩形。以地址位置为基准，判断姓名、性别、出生年的左侧位置是否合格，如果不合格则根据地址位置纠正。
-        判断其宽度是否合格，如果不合格则根据先验信息将其扩充。
+    判断其宽度是否合格，如果不合格则根据先验信息将其扩充。
     :param regions: 文字位置：姓名、性别、民族、出生年月日、住址、身份证号、头像
     :return: 补全后的位置
     """
-    #address_x = min(regions[6][:, 0].min(),np.array(regions[0:5])[:, :, 0].min())
     address_x = regions[6][:, 0].min()
-    # print("regions:",np.array(regions[0:5])[:, 0].max() )
-    #address_x = regions[6][:, 0].max()
     # 扩充姓名
     if abs(regions[0][0][0] - address_x) > 5:
         regions[0][0][2] += regions[0][0][0] - address_x
@@ -339,7 +292,7 @@ def complete_box(regions):
         regions[1][0][2] = 30 if regions[1][0][2] < 30 else regions[1][0][2]
     # 对齐性别
     if cal_cross_ratio(regions[1][0][1], regions[1][0][1] + regions[1][0][3], regions[2][0][1],
-                         regions[2][0][1] + regions[2][0][3]) < 0.5:
+                       regions[2][0][1] + regions[2][0][3]) < 0.5:
         regions[1][0][1] = regions[2][0][1]
 
     # 剪短民族
@@ -349,7 +302,6 @@ def complete_box(regions):
     # 扩充民族
     if regions[2][0][2] < 25:
         regions[2][0][2] = 30
-
 
     # 扩充年份
     if abs(regions[3][0][0] - address_x) > 5:
@@ -370,25 +322,22 @@ def complete_box(regions):
             regions[6][i, 0] = address_x
     return regions
 
-#获取框内文字信息
+
+# 获取框内文字信息
 def get_regions(img, scale, is_address=0, is_name=0, is_date=0, is_front = 1, is_consider_color = 1):
     """
-        对单块区域处理后，获取文文本位置
-        :param img: 图片
-        :param is_address: 是否是地址
-        :return: 文本位置
-        """
+    对单块区域处理后，获取文文本位置
+    :param is_name:
+    :param img: 图片
+    :param is_address: 是否是地址
+    :return: 文本位置
+    """
     img = img.copy()
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_gray = cv2.medianBlur(img_gray, 5)
-    # _, dst_binary = cv2.threshold(dst, 100, 255, cv2.THRESH_BINARY)
-    # if is_address:
-    #     _, img_binary = cv2.threshold(img_gray, 128, 255, cv2.THRESH_BINARY_INV )
-    # else:
     th, img_binary = cv2.threshold(img_gray, 128, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    #_,img_binary = cv2.threshold(img_gray, 50, 255, cv2.THRESH_BINARY_INV )
-    # 根据背景文字颜色为蓝色特点去除背景文字
 
+    # 根据背景文字颜色为蓝色特点去除背景文字
     if is_consider_color == 1:
         if is_address == 1:
             img_binary[(np.where(img[:, :, 0] > img[:, :, 1] + 10) or np.where(img[:, :, 0] > img[:, :, 2] + 10))] = 0
@@ -396,69 +345,45 @@ def get_regions(img, scale, is_address=0, is_name=0, is_date=0, is_front = 1, is
             img_binary[np.where(img[:, :, 0] > img[:, :, 1] + 10)] = 0
             img_binary[np.where(img[:, :, 0] > img[:, :, 2] + 10)] = 0
 
-    # print(is_address,th)
-    # _, img_binary = cv2.threshold(img_gray, 128, 255, cv2.THRESH_BINARY_INV )
-    # img_binary = separate_color(img)
-
     if is_address:
-        # plt.imshow(img_binary, cmap=plt.gray())
-        # plt.show()
         for i in reversed(range(img.shape[1] - 20, img.shape[1])):
             if cv2.countNonZero(img_binary[:, i]) > 25:
                 img_binary[:, i] = 0
 
-        # plt.imshow(img_binary, cmap=plt.gray())
-        # plt.show()
-    # plt.imshow(img_binary, cmap=plt.gray())
-    # plt.show()
     #  进行形态学开运算
     img_open = morphology(img_binary, scale, is_date)
-    # if is_address:
-    #     plt.imshow(img_open, cmap=plt.gray())
-    #     plt.show()
-    # plt.imshow(img_open, cmap=plt.gray())
-    # plt.show()
+
     # 获取文字区域位置
     text_region = find_word_regions(img_open, is_address, is_name=is_name, is_date=is_date)
-    # if is_address == 1:
-    #     print(text_region)
+
     # 在原图片上绘制文字区域矩形和剪切文字区域
     for i in range(len(text_region)):
+
         # rect[0],rect[1],rect[2],rect[3]  分别为矩形左上角点的横坐标，纵坐标，宽度，高度
         rect = text_region[i]
         x1, x2 = rect[0], rect[0] + rect[2]
         y1, y2 = rect[1], rect[1] + rect[3]
-        # print(w1,h1,w2,h2)
-        # w1, h1, w2, h2 =  8,4,256,49
         box = [[x1, y2], [x1, y1], [x2, y1], [x2, y2]]
         cv2.drawContours(img, np.array([box]), 0, (0, 255, 0), 2)
-    # plt.imshow(img, cmap=plt.gray())
-    # plt.show()
     return np.array(text_region)
+
 
 # 寻找文字区域
 def find_word_regions(img, is_address=0, is_name=0, is_date=0):
     """
-       获取一个二值图片中的文本位置
-       :param img: 图片
-       :param is_address: 是否是地址
-       :return: 文本位置
-           """
+    获取一个二值图片中的文本位置
+    :param img: 图片
+    :param is_address: 是否是地址
+    :return: 文本位置
+    """
     regions = []
     # 1. 查找轮廓
-    # plt.imshow(img)
-    # plt.show()
     _, contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # 2. 筛选那些面积小的
     contours_sorted = sorted(contours, key=cv2.contourArea, reverse=True)[:10]
     # 取面积最大的轮廓
     if is_address == 0:
-        # if is_name == 0:
-        #     max_contour = contours_sorted[0]
-        #     rect = cv2.boundingRect(max_contour)
-        #     regions.append(rect)
-        # else:
         pre_regions = []
         for i in range(len(contours_sorted)):
             cnt = contours_sorted[i]
@@ -532,13 +457,12 @@ def find_word_regions(img, is_address=0, is_name=0, is_date=0):
 
 def morphology(img, scale, is_date=0):
     """
-          对图片进行形态学处理（膨胀腐蚀）
-          :param img: 图片
-          :param scale: 倍数
-          :param is_date :是否是出生日期
-          :return: 膨胀腐蚀后的图片
-          """
-    # scale = int(img.shape[0] / 40)
+    对图片进行形态学处理（膨胀腐蚀）
+    :param img: 图片
+    :param scale: 倍数
+    :param is_date :是否是出生日期
+    :return: 膨胀腐蚀后的图片
+    """
     if is_date == 1:
         dilate_elment = cv2.getStructuringElement(cv2.MORPH_RECT, (10, 5))
         img_dilate = cv2.dilate(img, dilate_elment, iterations=1)
@@ -556,8 +480,10 @@ def morphology(img, scale, is_date=0):
     else:
         erode_elment = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
         dilate_elment = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 3))
+
     # 腐蚀图像
     img_erode = cv2.erode(img, erode_elment, iterations=1)
+
     #  膨胀图像
     img_dilate = cv2.dilate(img_erode, dilate_elment, iterations=1)
     return img_dilate
@@ -566,7 +492,6 @@ def morphology(img, scale, is_date=0):
 def intersect_height(y01, y02, y11, y12):
     """
     计算两个矩形在height轴方向交叉占比
-    :param self:
     :param y01: 第一个矩形y1
     :param y02: 第一个矩形y2
     :param y11: 第二个矩形y1
@@ -580,7 +505,6 @@ def intersect_height(y01, y02, y11, y12):
 def intersect_height(y01, y02, y11, y12):
     """
     计算两个矩形在height轴方向交叉占比
-    :param self:
     :param y01: 第一个矩形y1
     :param y02: 第一个矩形y2
     :param y11: 第二个矩形y1
@@ -599,10 +523,11 @@ def remove_inside(rects=[]):
     """
     i = 0
     while (i < len(rects)):
-
         rect_curr = rects[i]
+
         # 获取当前rect的上下左右边界信息
         u_curr, d_curr, l_curr, r_curr = get_u_d_l_r(rect_curr)
+
         # 判断当前rect是否在内部
         for rect_ in rects:
             u_, d_, l_, r_ = get_u_d_l_r(rect_)
@@ -622,11 +547,12 @@ def merge(rects=[]):
     :return:
     """
     i = 0
-    while (i < len(rects)):
-
+    while i < len(rects):
         rect_curr = rects[i]
+
         # 获取当前rect的上下左右边界信息
         u_curr, d_curr, l_curr, r_curr = get_u_d_l_r(rect_curr)
+
         # 判断当前rect是否在内部
         for rect_ in rects:
             if rect_ == rect_curr:
@@ -671,3 +597,325 @@ def cal_cross_ratio(y11, y12, y21, y22):
     :return:
     """
     return (min(y12, y22) - max(y11, y21)) / (max(y12, y22) - min(y11, y21))
+
+
+def max_face_detect(faces, image):
+    left = faces[0].left()
+    top = faces[0].top()
+    right = faces[0].right()
+    bottom = faces[0].bottom()
+    Wwidth = right - left
+    Hheigt = top - bottom
+
+    width = right - left
+    high = top - bottom
+    left2 = np.uint(left - 0.3*width)
+    bottom2 = np.uint(bottom + 0.6*width)
+    img = cv2.rectangle(image, (left2, bottom2 - 20), (left2 + 2 * width - 50, bottom2 + 2 * high), (0, 0, 255), 2)
+    # cv_show('img',img)
+
+    top2 = np.uint(bottom2 + 1.8 * high)
+    right2 = np.uint(left2 + 1.6 * width)
+    # 人像框范围
+    max_face = image[top2:bottom2, left2:right2, :]
+    # cv_show('face_img',max_face)
+    return max_face, img, width, high, left2, bottom2, right2
+
+
+# 开操作 腐蚀+膨胀 cv.MORPH_OPEN
+def open_demo(image):
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    binary = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
+    return binary
+
+
+# 闭操作 膨胀+腐蚀 cv.MORPH_CLOSE
+def close_demo(image):
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+    binary = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
+
+    cv2.imshow("close_result", binary)
+    return binary
+
+
+def getpart_info(part):
+    """
+    :param part: 身份证信息框大体位置
+    :return: 身份证信息轮廓
+    """
+
+    result = cv2.bilateralFilter(part.copy(), 0, 50, 5)
+    # cv2.imshow("bilateralFilter", result)
+    # cv2.waitKey(0)
+
+    thresh = cv2.adaptiveThreshold(cv2.cvtColor(result, cv2.COLOR_BGR2GRAY), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                   cv2.THRESH_BINARY_INV, 25, 5)
+    # cv2.imshow("thresh o", thresh)
+    # cv2.waitKey(0)
+
+    # 开操作
+    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 3))
+    morphologyEx = cv2.dilate(thresh, kernelX)
+    morphologyEx = open_demo(morphologyEx)
+
+    # cv2.imshow('morphologyEx1', morphologyEx)
+    # cv2.waitKey(0)
+
+    # 膨胀腐蚀
+    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 3))
+    kernelY = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    Element = cv2.dilate(morphologyEx, kernelX)
+    Element = cv2.dilate(Element, kernelY,iterations=2)
+    Element = cv2.erode(Element, kernelX)
+    Element = cv2.erode(Element, kernelY)
+
+    # cv2.imshow('getStructuringElement', Element)
+    # cv2.waitKey(0)
+
+    _, contours, hair = cv2.findContours(Element, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    return contours
+
+
+def box_get_front_correction(img,addX,addY ,imgHeight,imgWidth,faceLeft,name_y,sex_y,birth_year_y):
+    '''
+    根据地址的坐标 定位其他信息的位置
+    :param img: 输入图片
+    :param addX: 地址的x坐标
+    :param addY: 地址的y坐标
+    :param imgHeight: 图片高度
+    :param imgWidth: 图片宽度
+    :param faceLeft: 人脸左边坐标
+    :return: 文字的位置
+    '''
+    regions = []
+
+    # 地址
+    address_addHeight = int(addY + imgHeight / 2.8)
+    address_addWidth = faceLeft
+    address = img[addY:address_addHeight, addX:address_addWidth]
+    img = cv2.rectangle(img, (addX, addY), (address_addWidth, address_addHeight), (0, 0, 255), 2)
+
+    # 名字
+    name_x = addX
+    name_y = name_y # int(addY - imgHeight/1.65)
+    name_addHeight = int(name_y + 46) + 10
+    name_addWidth = int(name_x + imgWidth / 4)
+    name = img[name_y:name_addHeight, name_x:name_addWidth]
+    img = cv2.rectangle(img, (name_x, name_y), (name_addWidth, name_addHeight), (0, 0, 255), 2)
+
+    # 性别
+    sex_x= addX
+    sex_y= sex_y # int(addY - imgHeight/2.65)
+    sex_addHeight = int(sex_y + imgHeight / 7.71)
+    sex_addWidth = int(sex_x + 45)
+    sex = img[sex_y:sex_addHeight, sex_x:sex_addWidth]
+    img = cv2.rectangle(img, (sex_x, sex_y), (sex_addWidth, sex_addHeight), (0, 0, 255), 2)
+
+    # 民族
+    nationality_x = addX + 150
+    nationality_y = sex_y
+    nationality_addHeight = int(nationality_y + imgHeight / 7.65)
+    nationality_addWidth = int(nationality_x + 50)
+    nationality = img[nationality_y:nationality_addHeight, nationality_x:nationality_addWidth]
+    img = cv2.rectangle(img, (nationality_x, nationality_y), (nationality_addWidth, nationality_addHeight), (0, 0, 255),
+                        2)
+
+    # 出生 年
+    birth_year_x = addX
+    birth_year_y = birth_year_y # int(addY - imgHeight/4.6)
+    birth_year_addHeight = int(birth_year_y + imgHeight / 7.71)
+    birth_year_addWidth = int(birth_year_x + 75)
+    birth_year = img[birth_year_y:birth_year_addHeight, birth_year_x:birth_year_addWidth]
+    img = cv2.rectangle(img, (birth_year_x, birth_year_y), (birth_year_addWidth, birth_year_addHeight), (0, 0, 255), 2)
+
+    #出生 月
+    birth_month_x = birth_year_x + 123
+    birth_month_y = birth_year_y
+    birth_month_addHeight = int(birth_month_y + imgHeight / 7.6)
+    birth_month_addWidth = int(birth_month_x + 40)
+    birth_month = img[birth_month_y:birth_month_addHeight, birth_month_x:birth_month_addWidth]
+    img = cv2.rectangle(img, (birth_month_x, birth_month_y), (birth_month_addWidth, birth_month_addHeight), (0, 0, 255),
+                        2)
+
+    #出生 日
+    birth_day_x = birth_year_x + 190
+    birth_day_y = birth_year_y
+    birth_day_addHeight = int(birth_day_y + imgHeight / 7.6)
+    birth_day_addWidth = int(birth_day_x + 43)
+    birth_day = img[birth_day_y:birth_day_addHeight, birth_day_x:birth_day_addWidth]
+    img = cv2.rectangle(img, (birth_day_x, birth_day_y), (birth_day_addWidth, birth_day_addHeight), (0, 0, 255), 2)
+
+
+#对数组进行排序
+def findSmallest(arr):
+    # 将第一个元素的值作为最小值赋给smallest
+    smallest = arr[0]
+    smallest_index = 0  # 将第一个值的索引作为最小值的索引赋给smallest_index
+    for i in range(1, len(arr)):
+        if arr[i] < smallest:  # 对列表arr中的元素进行一一对比
+            smallest = arr[i]
+            smallest_index = i
+    return smallest_index
+
+
+def selectionSort(arr):
+    newArr = []
+    for i in range(len(arr)):
+        smallest = findSmallest(arr)  # 一共要调用5次findSmallest
+        newArr.append(arr.pop(smallest))  # 每一次都把findSmallest里面的最小值删除并存放在新的数组newArr中
+    return newArr
+
+
+def box_get_front_message(image, save_name):
+
+    image_copy = image.copy()
+    detector = dlib.get_frontal_face_detector()
+    dets = detector(image, 2)  # 使用detector进行人脸检测 dets为返回的结果
+    # 将识别的图像可视化
+
+    predictor = dlib.shape_predictor("../data/shape_predictor_5_face_landmarks.dat")
+
+    left = dets[0].left()
+    top = dets[0].top()
+    right = dets[0].right()
+    bottom = dets[0].bottom()
+    Wwidth=right - left
+    Hheigt=top - bottom
+
+    # 照片的位置（不怎么精确）
+    width = right - left
+    high = top - bottom
+    left2 = np.uint(left - 0.3*width)
+    bottom2 = np.uint(bottom + 0.6*width)
+
+    img = cv2.rectangle(image,(left2,bottom2-20),(left2+2*width-50,bottom2+2*high),(0,0,255),2)
+
+    top2 = np.uint(bottom2 + 1.8 * high)
+    right2 = np.uint(left2 + 1.6 * width)
+    face_img = image[top2:bottom2, left2:right2, :]
+
+    face_gray = cv2.cvtColor(face_img,cv2.COLOR_BGR2GRAY)
+    ret = cv2.threshold(face_gray,0,255,cv2.THRESH_OTSU|cv2.THRESH_BINARY_INV)[1]
+    # cv_show('ret',ret)
+    erode = cv2.erode(ret,(9,9),iterations=3)
+    dilate = cv2.dilate(erode,(9,9),iterations=3)
+
+    '''
+    找身份证号码的位置
+    '''
+    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    rectKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(25,25))
+    sqlKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(15,15))
+
+    tophat = cv2.morphologyEx(gray,cv2.MORPH_TOPHAT,sqlKernel)
+
+    gradX = cv2.Sobel(tophat,ddepth=cv2.CV_32F,dx=1,dy=0,ksize=-1)
+    gradX = np.absolute(gradX)
+    (minVal,maxVal) = (np.min(gradX),np.max(gradX))
+    gradX = (255*((gradX-minVal)/(maxVal-minVal)))
+    gradX = gradX.astype('uint8')
+
+    gradX = cv2.morphologyEx(gradX,cv2.MORPH_CLOSE,sqlKernel)
+
+    thresh=cv2.threshold(gradX, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+
+    thresh=cv2.morphologyEx(thresh,cv2.MORPH_CLOSE,rectKernel,iterations=1)
+
+    threshCnts=cv2.findContours(thresh.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
+    cnts=threshCnts
+
+    cur_img=img.copy()
+    cv2.drawContours(cur_img,cnts,-1,(0,0,255),3)
+
+
+    locs=[]
+    # 遍历轮廓
+    for (i, c) in enumerate(cnts):
+        (x, y, w, h)=cv2.boundingRect(c)
+        ar = w / float(h)
+        # 选择合适的区域，根据实际任务来，这里的基本上都是四个数字一组
+        if ar > 5 and ar < 40:
+            if w > 350 and w < 600:
+                # 把符合的留下来
+                locs.append((x, y, w, h))
+
+    locs=sorted(locs,key=lambda x: x[0])
+    # output=[]
+
+    for (i,(gX,gY,gW,gH)) in enumerate(locs):
+        # initialize the list of group digits
+        cv2.rectangle(img,(gX-5,gY-5),(gX+gW+5,gY+gH+5),(0,0,255),2)
+
+    result_img=img.copy()
+    '''
+     框出信息区域
+    '''
+    Xwidth = gW+10
+    Yheight = gH+10
+    long = 2*Xwidth
+    X1 = 2*width
+    Y1 = 2*high
+    left3 = left2-(long-X1)
+
+    if left3 > 0:
+        left3 = left3
+        top2 = bottom2 + 2 * high - 100
+        point1 = (left3, bottom2)
+        point2 = (left2, top2)
+    else:
+        left3 = 90
+        top2 = bottom2 + 2 * high - 100
+        point1 = (left3, bottom2)
+        point2 = (left2, top2)
+
+    if top2 < 0:
+        top2 = 20
+    img_copy = img.copy()
+    cv2.rectangle(img, point1, point2, (0, 0, 255), 2)
+
+    part = image_copy[top2:bottom2,left3:left2+15]
+
+    retCnts = getpart_info(part)
+
+    retCnts = sorted(retCnts, key=cv2.contourArea, reverse=True)
+    h = retCnts[0]
+    i = 0
+    (x, y, w, h) = cv2.boundingRect(h)
+    x = x + left3
+    y = y + top2
+    cv2.rectangle(img, (x - 5, y - 5), (x + w + 5, y + h + 5), (0, 255, 255), 2)
+
+    cut = x - 5
+    part_in=image_copy[top2:y+100,cut:left2+15]
+
+    X = x-5
+    Y = y-5
+    conCnts = getpart_info(part_in)
+    countY = []
+    for c in conCnts:
+
+          (x, y, w, h) = cv2. boundingRect(c)
+          x = x + cut
+          y = y + top2
+          if abs(x-cut) < 30 and w > 20:
+              countY.append(y)
+              cv2.rectangle(img_copy, (x - 5, y - 5), (x + w + 5, y + h + 5), (0, 255, 0), 2)
+
+    countY = selectionSort(countY)
+
+    temp = 1
+    for i in range(1,len(countY)):
+         temp += 1
+    if temp == 4 or temp == 5:
+        box_get_front_correction(result_img, X , Y ,8 * gH, long, left2,countY[0],countY[1]
+                                  ,countY[2])
+    elif temp == 6:
+        box_get_front_correction(result_img, X, Y, 8 * gH, long, left2, countY[1], countY[2]
+                                 , countY[3])
+
+    else:
+        box_get_front_correction(result_img, X , Y ,8 * gH, long, left2,countY[0],countY[1]
+                                 ,countY[1]+60)
+
+    cv2.imencode('.jpg', result_img)[1].tofile(str(save_name))

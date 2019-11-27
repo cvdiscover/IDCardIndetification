@@ -1,21 +1,11 @@
 # -*- coding: UTF-8 -*-
-import cv2
-import matplotlib.pyplot as plt
-import numpy as np
-import copy
-import os
-import matplotlib.pylab as plt
-import dlib
-from PIL import Image
-from datetime import datetime
-from foo.tools.front_correct_skew import correct_skew, resize
-from foo.idcard_back_detection import *
-from foo.idcard_front_detection import *
-from foo.tools.address import *
-from foo.tests.idcard_front_1 import *
+from src.front_correct_skew import correct_skew, resize
+from src.idcard_back_detection import *
+from src.idcard_front_detection import *
+from src.config.config import *
 
 # 加载人脸检测模型
-classfier = cv2.CascadeClassifier("../haarcascades/haarcascade_frontalface_alt2.xml")
+classfier = cv2.CascadeClassifier("../data/haarcascades/haarcascade_frontalface_alt2.xml")
 detector = dlib.get_frontal_face_detector()
 
 
@@ -32,14 +22,11 @@ def batch_process(input_dir="images/", output_dir="output/"):
         output_dir += "/"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    # is_existed = os.listdir("D:/datasets/project_datasets/idcard/sfz_front_output4")
     for filename in os.listdir(input_dir):
         if len(filename.split(".")) < 2 or (filename.split(".")[-1] != "jpg" and filename.split(".")[-1] != "jpeg" and filename.split(".")[-1] != "png"):
             continue
 
         print(filename)
-        # if filename in is_existed:
-        #     continue
         path = input_dir + filename
         save_name = output_dir + filename
         try:
@@ -51,10 +38,10 @@ def batch_process(input_dir="images/", output_dir="output/"):
 def single_process(path, save_name):
     """
     单张调试
+    :param path:文件地址
+    :param save_name:存储地址
     :return:
     """
-    # path = "images/28.jpg"
-    # path = "F:/idcard/2/2/images/C370DA4B883D4F12A607938F6B390FBE.JPG"
 
     img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), -1)
     orig = img.copy()
@@ -102,15 +89,11 @@ def single_process(path, save_name):
     # 需要进行纠偏，纠偏完了后进行信息的定位
     if is_need_correct_skew == 1:
         if len(faceRects) > 0:
-            # max_face = faceRects[np.where(faceRects[:, 3] == faceRects[:, 3].max())]
             # # 根据人脸与整体图片大小的比例判断是否需要纠正
             img = correct_skew(img, 1, max_face)
         else:
             img = correct_skew(img, 0)
 
-        # plt.imshow(img,cmap=plt.gray())
-        # plt.show()
-        correct_skew_time = datetime.now()
         imgWidth = 800
         imgHeight = 506
         img = cv2.resize(img, (imgWidth, imgHeight))
@@ -132,12 +115,11 @@ def single_process(path, save_name):
                 print("反面定位失败！")
                 pass
 
-        locate_time = datetime.now()
-
 
 def face_detect(img):
+
     # angle范围在-90->90度，纠正-90->90度的偏差
-    from foo.tools.back_correct_skew import cal_rotation_angle
+    from src.back_correct_skew import cal_rotation_angle
     angle = cal_rotation_angle(img.copy())
 
     # 将填充颜色改为（100,100,100）
@@ -150,15 +132,9 @@ def face_detect(img):
 
     img_rotation = Image.fromarray(np.array(img_rotation))
 
-    # img_rotation = Image.fromarray(np.array(img))
     # 使用dlib人脸检测模型
     faces_dlib = detector(np.array(img_rotation), 1)
-    # print(faces_dlib[0])
-    #
-    # box = [[318, 474], [318, 367], [426, 367], [426, 474]]
-    # # cv2.drawContours(img, np.array([box]), 0, (0, 255, 0), 2)
-    # plt.imshow(img, cmap=plt.gray())
-    # plt.show()
+
     if len(img.shape) == 3:
         gray = cv2.cvtColor(np.array(img_rotation), cv2.COLOR_BGR2GRAY)
     else:
@@ -180,13 +156,8 @@ def face_detect(img):
 
         # 使用opencv人脸检测模型
         faces_cv = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
-        #print(len(faces_dlib),len(faces_cv))
         if len(faces_dlib) == 0 or len(faces_cv) == 0:
             is_front = 0
-
-    # print(len(faces_dlib), len(faces_cv))
-    # plt.imshow(img_rotation, cmap=plt.gray())
-    # plt.show()
     if is_front:
         return np.array(img_rotation)
     else:
@@ -194,15 +165,17 @@ def face_detect(img):
 
 
 if __name__ == "__main__":
-    is_debug = 0
-    is_batch = 1
-    if is_batch:
-        input_dir = input_dir
-        output_dir = output_dir
-        batch_process(input_dir, output_dir)  # 批量处理
-    else:
 
+    # 0-单张处理； 1-批量处理
+    is_batch = 1
+
+    # 批量处理
+    if is_batch:
+        batch_process(input_dir, output_dir)
+
+    # 单张处理
+    else:
         img_name = img_name
         path = path_without_img_name + img_name
         save_name = "../output/"+img_name.split(".")[0]+".jpg"
-        single_process(path, save_name)  # 单张调试
+        single_process(path, save_name)
