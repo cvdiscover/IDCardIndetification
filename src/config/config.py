@@ -29,8 +29,10 @@ is_show_point_lines = 0
 # path_without_img_name：单张地址根目录
 # img_name: 单张图片名称
 ###################################################################
-input_dir = "C:/Users/Alexi/Desktop/idcard_info/sfz_30"
-output_dir = "C:/Users/Alexi/Desktop/idcard_info/sfz_30_result"
-path_without_img_name = "C:/Users/Alexi/Desktop/idcard_info/sfz_front/"
-img_name = "1b486dea-a69b-4eaf-a12a-3c74898cdaa8.jpeg"
+input_dir = "C:/Users/Alexi/Desktop/idcard_info/sfz_back"
+output_dir = "C:/Users/Alexi/Desktop/idcard_info/sfz_back_result"
+
+path_without_img_name = "C:/Users/Alexi/Desktop/idcard_info/sfz_mix/"
+img_name = "0dc1cde8-f6fc-444f-846f-8a5aa9209422.jpeg"
+single_output_dir = "C:/Users/Alexi/Desktop/idcard_info/sfz_single_result/"
 

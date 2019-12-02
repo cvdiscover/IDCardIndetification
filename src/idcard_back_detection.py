@@ -19,8 +19,6 @@ def box_get_back(img, save_name, imgHeight, imgWidth):
     issuing_authority_addWidth = int(imgWidth / 2.5 + imgWidth / 2)
     img_issuing_authority = img[issuing_authority_height:issuing_authority_addHeight,
                             issuing_authority_width:issuing_authority_addWidth]
-    # plt.imshow(img, cmap=plt.gray())
-    # plt.show()
     scale = int(img.shape[1] / 500)
     # print(scale, img.shape)
     issuing_authority_region = get_regions(img_issuing_authority, scale, is_front = 0)
@@ -50,15 +48,11 @@ def box_get_back(img, save_name, imgHeight, imgWidth):
             rect = regions[i][j]
             x1, x2 = rect[0], rect[0] + rect[2]
             y1, y2 = rect[1], rect[1] + rect[3]
-            # print(w1,h1,w2,h2)
-            # w1, h1, w2, h2 =  8,4,256,49
             box = [[x1, y2], [x1, y1], [x2, y1], [x2, y2]]
-            cv2.drawContours(img_copy, np.array([box]), 0, (0, 255, 0), 2)
+            # cv2.drawContours(img_copy, np.array([box]), 0, (0, 255, 0), 2)
     if is_debug == 1:
         plt.imshow(img_copy, cmap=plt.gray())
         plt.show()
-    # plt.imshow(img_copy, cmap=plt.gray())
-    # plt.show()
     cv2.imencode('.jpg', img_copy)[1].tofile(str(save_name))
 
 
@@ -99,7 +93,7 @@ def get_regions(img, scale, is_address=0, is_name=0, is_date=0, is_front = 1, is
         x1, x2 = rect[0], rect[0] + rect[2]
         y1, y2 = rect[1], rect[1] + rect[3]
         box = [[x1, y2], [x1, y1], [x2, y1], [x2, y2]]
-        cv2.drawContours(img, np.array([box]), 0, (0, 255, 0), 2)
+        # cv2.drawContours(img, np.array([box]), 0, (0, 255, 0), 2)
     return np.array(text_region)
 
 
@@ -209,9 +203,12 @@ def pre_fitline_get_back(src, save_name):
                     else:
                         result = perspective_transformation(fit_points, "fitline", result.copy())
                     marked_image = find_information(result, result.copy())
+
                     if marked_image is not None:
                         cv2.imencode('.jpg', marked_image)[1].tofile(str(save_name))
-                    return True
+                        return True
+                    else:
+                        return False
                 except Exception as E:
                     print(E)
             else:
@@ -253,7 +250,7 @@ def find_information(result, img):
         cv2.waitKey(0)
 
     # 开操作
-    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 1))
+    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 1))
     canny = cv2.dilate(canny, kernelX)
     morphologyEx = open_demo(canny)
 
@@ -266,8 +263,8 @@ def find_information(result, img):
         cv2.waitKey(0)
 
     # 膨胀腐蚀
-    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 1))
-    kernelY = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 1))
+    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 3))
+    kernelY = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
     Element = cv2.dilate(morphologyEx, kernelX)
     Element = cv2.dilate(Element, kernelY)
     Element = cv2.erode(Element, kernelX)
@@ -298,16 +295,13 @@ def find_information(result, img):
 
     rectangle = sorted(rectangle, key=lambda a: a[2] * a[3], reverse=True)
     rec_len = len(rectangle)
-    if rec_len > 2:
+    if rec_len >= 2:
         for i in range(0, 2):
             x, y, w, h = rectangle[i]
             cv2.rectangle(img, (x, y + cut_h), (x + w, y + h + cut_h), (0, 255, 255), 2)
+        return img
     else:
-        for i in range(0, rec_len):
-            x, y, w, h = rectangle[i]
-            cv2.rectangle(img, (x, y + cut_h), (x + w, y + h + cut_h), (0, 255, 255), 2)
-
-    return img
+        return None
 
 
 # 找到纠偏后图像中的（中华人民共和国）和（居民身份证）的位置

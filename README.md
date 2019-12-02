@@ -1,7 +1,20 @@
 
-#身份证信息检测
+# 身份证信息检测
 
-### 1. 项目的基本结构
+## 运行环境
+
+python：3.7.3 \
+opencv-python：4.1.1.26 \
+opencv-contrib-python：3.4.2.17 \
+Pillow：6.2.1 \
+cmake：3.15.3 \
+dlib：19.18.0 \
+matplotlib：3.1.1 \
+numpy：1.17.3 \
+scipy：1.3.1 \
+
+## 项目结构
+
 ``` python
 |--[data]                           静态数据
 |--[docs]                           项目文档
@@ -21,12 +34,15 @@
 |--README.md                        介绍文件
 ```
 
-### 2. 程序的使用方式
+## 使用方法
 
-1. 使用前先更改src - config - config.py 的文件读取输出的绝对路径。
-2. 程序的主入口在src - id_detect.py 
-3. 当选择批量识别时，只需要输入输出路径的根目录地址即可；当选择单张识别时，需要给定根目录地址和单张图片全名（包括后缀）
+1. 修改 src/config/config.py 中的输入、输出文件或路径信息。
+2. 进入src目录，修改id_detect.py，如果执行批处理检测，将is_batch设置为1，否则设置为0。
+3. 执行id_detect.py
+``` python
+python id_detect.py
+```
 
-### 3. 注意事项
-1. data内存放的时静态数据，需要调用，不可更改。
-2. config.py 存放的proporation原则上无需更改。
+## 注意事项
+1. data 目录存放的是静态数据，程序运行时会调用，不可更改。
+2. config.py 存放的proporation 一般不需要修改。

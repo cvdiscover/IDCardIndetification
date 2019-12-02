@@ -13,7 +13,7 @@ import copy
 def cv_show(name, img):
     cv2.imshow(name, img)
     cv2.waitKey(0)
-    cv2.destroyAllWindows()  ##定义
+    cv2.destroyAllWindows()   # 定义
 
 
 def resize(image, width=None, height=None, inter=cv2.INTER_AREA):  #
