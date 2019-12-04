@@ -1154,7 +1154,6 @@ def get_border_by_canny(img, is_filter=0):
     for line in lines_2d_original:
         x1, y1, x2, y2 = line
         lines_2d.append([x1, y1, x2, y2])
-        cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
     if is_show_lines:
         plt.imshow(img)
@@ -2352,14 +2351,14 @@ def correct_skew(img, is_front, max_face=[0, 0, 0, 0]):
         b_r_point = find_cross_point(bottom, right)
 
         # 用红色画出四个顶点
-        for point in t_l_point, t_r_point, b_l_point, b_r_point:
-            cv2.circle(img, point, 8, (0, 0, 255), 2)
+        # for point in t_l_point, t_r_point, b_l_point, b_r_point:
+        #     cv2.circle(img, point, 8, (0, 0, 255), 2)
 
         # 用蓝色画出四条边
-        cv2.line(img, t_l_point, t_r_point, (255, 0, 0), 3)
-        cv2.line(img, b_r_point, t_r_point, (255, 0, 0), 3)
-        cv2.line(img, b_r_point, b_l_point, (255, 0, 0), 3)
-        cv2.line(img, b_l_point, t_l_point, (255, 0, 0), 3)
+        # cv2.line(img, t_l_point, t_r_point, (255, 0, 0), 3)
+        # cv2.line(img, b_r_point, t_r_point, (255, 0, 0), 3)
+        # cv2.line(img, b_r_point, b_l_point, (255, 0, 0), 3)
+        # cv2.line(img, b_l_point, t_l_point, (255, 0, 0), 3)
         if is_debug == 1:
             plt.imshow(img)
             plt.show()

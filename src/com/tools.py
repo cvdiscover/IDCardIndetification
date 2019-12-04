@@ -20,7 +20,6 @@ def get_u_d_l_r(rect):
 def intersect_height(y01, y02, y11, y12):
     """
     计算两个矩形在height轴方向交叉占比
-    :param self:
     :param y01: 第一个矩形y1
     :param y02: 第一个矩形y2
     :param y11: 第二个矩形y1

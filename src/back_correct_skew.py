@@ -256,7 +256,7 @@ def back_correct_skew(img):
     d_l_min = w
     d_r_min = w
     for line in vertical:
-        x1, y1, x2, y2 =  line
+        x1, y1, x2, y2 = line
         # 计算竖线倾斜角度
         if x1 - x2 == 0:
             a = 90

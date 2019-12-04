@@ -36,8 +36,8 @@ scipy：1.3.1 \
 
 ## 使用方法
 
-1. 修改 src/config/config.py 中的输入、输出文件或路径信息。
-2. 进入src目录，修改id_detect.py，如果执行批处理检测，将is_batch设置为1，否则设置为0。
+1. 进入src/config/目录 修改config.py 中的输入、输出文件或路径信息。
+2. 进入src/config/目录，修改config.py，如果执行批处理检测，将is_batch设置为1，否则设置为0。
 3. 执行id_detect.py
 ``` python
 python id_detect.py

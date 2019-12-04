@@ -185,6 +185,11 @@ def find_word_regions(img, is_address=0, is_name=0, is_date=0):
 
 # 通过国徽位置预估边界拟合直线完成
 def pre_fitline_get_back(src, save_name):
+    """
+    :param src: 原图像
+    :param save_name: 存储路径
+    :return: 成功返回True  失败返回False
+    """
     img, text1, text2 = correct_image(src.copy())
     result, dst = flann_univariate_matching(img.copy())
     if result is not None and dst is not None:
@@ -202,7 +207,7 @@ def pre_fitline_get_back(src, save_name):
                         result = perspective_transformation(pre_angle_points, None, result.copy())
                     else:
                         result = perspective_transformation(fit_points, "fitline", result.copy())
-                    marked_image = find_information(result, result.copy())
+                    marked_image = find_information(result.copy())
 
                     if marked_image is not None:
                         cv2.imencode('.jpg', marked_image)[1].tofile(str(save_name))
@@ -217,24 +222,30 @@ def pre_fitline_get_back(src, save_name):
 
 
 # 裁剪好的图像寻找信息位置
-def find_information(result, img):
+def find_information(result):
     """
     找到纠偏后图像中的（中华人民共和国）和（居民身份证）的位置
     :param result:裁剪后的图像
     :return:（中华人民共和国）和（居民身份证）的位置
     """
+    img = result.copy()
+    cut_result, cut_h = image_select(result.copy())
+    thresh = cv2.adaptiveThreshold(cv2.cvtColor(cut_result, cv2.COLOR_BGR2GRAY), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                   cv2.THRESH_BINARY, 21, 5)
+    contours = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[1]
 
-    result1, cut_h = image_select(result.copy())
+    if len(contours) > 150:
+        cut_result = cv2.bilateralFilter(cut_result, 0, 100, 5)
 
-    result = cv2.bilateralFilter(result1, 0, 100, 5)
     if is_debug == 1:
-        cv2.imshow("bilateralFilter", result)
+        cv2.imshow("bilateralFilter", cut_result)
         cv2.waitKey(0)
-        plt.hist(result.ravel(), 256, [0, 256])
+        plt.hist(cut_result.ravel(), 256, [0, 256])
         plt.show()
 
-    thresh = cv2.adaptiveThreshold(cv2.cvtColor(result, cv2.COLOR_BGR2GRAY), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 5)
+    thresh = cv2.adaptiveThreshold(cv2.cvtColor(cut_result, cv2.COLOR_BGR2GRAY), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 5)
     contours = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[1]
+
     if is_debug == 1:
         cv2.imshow("thresh o", thresh)
         cv2.waitKey(0)
@@ -242,7 +253,7 @@ def find_information(result, img):
         plt.show()
 
     if len(contours) > 150:
-        thresh = cv2.bilateralFilter(result, 0, 80, 5)
+        thresh = cv2.bilateralFilter(cut_result, 0, 80, 5)
 
     canny = cv2.Canny(thresh, 10, 150, 20)  # 50是最小阈值,150是最大阈值
     if is_debug == 1:
@@ -263,7 +274,7 @@ def find_information(result, img):
         cv2.waitKey(0)
 
     # 膨胀腐蚀
-    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 3))
+    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 3))
     kernelY = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
     Element = cv2.dilate(morphologyEx, kernelX)
     Element = cv2.dilate(Element, kernelY)
@@ -275,7 +286,7 @@ def find_information(result, img):
         cv2.waitKey(0)
 
     # 闭操作
-    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 1))
+    kernelX = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 3))
     morphologyEx = cv2.morphologyEx(Element, cv2.MORPH_CLOSE, kernelX)
 
     if is_debug == 1:
@@ -394,7 +405,7 @@ def flann_univariate_matching(img):
     MIN_MATCH_COUNT = 15
 
     # 首先加载两幅图（查询图像和训练图像）
-    img1 = cv2.imread(guohui_direct, cv2.IMREAD_GRAYSCALE)
+    img1 = cv2.imread(national_emblem_direct, cv2.IMREAD_GRAYSCALE)
     img2 = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2GRAY)
     if is_debug == 1:
         plt.imshow(img2), plt.show()

@@ -4,7 +4,7 @@ import os
 from PIL import Image
 
 from src.front_correct_skew import correct_skew, resize
-from src.idcard_back_detection import pre_fitline_get_back, box_get_back
+from src.idcard_back_detection import pre_fitline_get_back, box_get_back, find_information
 from src.idcard_front_detection import *
 from src.config.config import *
 
@@ -20,8 +20,7 @@ detector = dlib.get_frontal_face_detector()
 def batch_process(input_dir="images/", output_dir="output/"):
     """
     批量处理图片
-    :param front_output_dir: 正面定位后输出文件夹
-    :param back_output_dir: 反面定位后输出文件夹
+    :param output_dir: 输出地址
     :param input_dir: 输入文件夹
     :return:
     """
@@ -29,8 +28,6 @@ def batch_process(input_dir="images/", output_dir="output/"):
         input_dir += "/"
     if output_dir[-1] != "/":
         output_dir += "/"
-    # if back_output_dir[-1] != "/":
-    #     back_output_dir += "/"
     front_output_dir = output_dir + "front/"
     back_output_dir = output_dir + "back/"
     if not os.path.exists(front_output_dir):
@@ -40,7 +37,7 @@ def batch_process(input_dir="images/", output_dir="output/"):
     for filename in os.listdir(input_dir):
         if len(filename.split(".")) < 2 or (filename.split(".")[-1] != "jpg" and filename.split(".")[-1] != "jpeg" and filename.split(".")[-1] != "png"):
             continue
-
+        print("#############################\n")
         print(filename)
         path = input_dir + filename
         front_save_name = front_output_dir + filename
@@ -98,7 +95,6 @@ def single_process(path, front_save_name, back_save_name):
             img = resize(orig.copy(), width=500)
             if not pre_fitline_get_back(img.copy(), back_save_name):
                 is_need_correct_skew = 1
-
     except Exception as e:
         print("初次定位出错，需要进行纠偏！")
         is_need_correct_skew = 1
@@ -117,8 +113,6 @@ def single_process(path, front_save_name, back_save_name):
 
         if len(faceRects) > 0:
             faces = detector(img, 1)
-            # plt.imshow(img,cmap=plt.gray())
-            # plt.show()
             if len(faces) == 0:
                 return
             try:
@@ -127,7 +121,11 @@ def single_process(path, front_save_name, back_save_name):
                 print("正面定位失败！")
         else:
             try:
-                box_get_back(img, back_save_name, 316, 500)
+                marked_image = find_information(img)
+                if marked_image is None:
+                    box_get_back(img, back_save_name, 316, 500)
+                else:
+                    cv2.imencode('.jpg', marked_image)[1].tofile(str(back_save_name))
             except Exception as e:
                 print("反面定位失败！")
                 pass
@@ -183,9 +181,6 @@ def face_detect(img):
 
 if __name__ == "__main__":
 
-    # 0-单张处理； 1-批量处理
-    is_batch = 0
-
     # 批量处理
     if is_batch:
         batch_process(input_dir, output_dir)
@@ -194,7 +189,9 @@ if __name__ == "__main__":
     else:
         img_name = img_name
         path = path_without_img_name + img_name
-        if not os.path.exists(path_without_img_name):
-            os.makedirs(path_without_img_name)
+        if single_output_dir[-1] != "/":
+            single_output_dir += "/"
+        if not os.path.exists(single_output_dir):
+            os.makedirs(single_output_dir)
         save_name = single_output_dir + img_name.split(".")[0]+".jpg"
         single_process(path, save_name, save_name)
