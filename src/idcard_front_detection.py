@@ -51,7 +51,7 @@ def check_location(img, region):
         return 1
     elif img.shape[0] / img.shape[1] < 290 / 500 or img.shape[0] / img.shape[1] > 350 / 500:
         return 1
-    elif region[7][0][1] + 1/2* region[7][0][3] < region[8][0][1] + region[8][0][3]:
+    elif region[7][0][1] + 1/2* region[7][0][3] > region[8][0][1] + region[8][0][3]:
         return 1
     else:
         return 0
@@ -68,6 +68,12 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     """
 
     regions = []
+    #
+    # 身份证号码左上角垂直距离
+    id = int(imgHeight / 1.3)
+    # 相片右下角垂直位置
+    photo = face_rect[0][1] + face_rect[0][3] + 60
+    distance = abs(photo-id)+8
 
     #精准确定照片位置
     photo_x1 = face_rect[0][0] - 40
@@ -84,7 +90,7 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     photo_region[0][1] += photo_y1
 
     # 地址
-    address_y = int(imgHeight / 2.11)
+    address_y = int(imgHeight / 2.11)+distance
     address_x = 87
     address_addHeight = int(address_y + imgHeight / 3.17)
     address_addWidth = photo_region[0][0]
@@ -100,7 +106,7 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     left_position = address_region[:, 0].min() - 15
 
     # 名字
-    name_y = int(imgHeight / 10.8) - 10
+    name_y = int(imgHeight / 10.8) - 10+distance
     name_x = left_position
     name_addHeight = int(name_y + 46) + 10
     name_addWidth = int(name_x + imgWidth / 4)
@@ -117,7 +123,7 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     regions.append(name_region)
 
     # 性别
-    sex_y = int(imgHeight / 4.5)
+    sex_y = int(imgHeight / 4.5)+distance
     sex_x = left_position
     sex_addHeight = int(sex_y + imgHeight / 7.71)
     sex_addWidth = int(sex_x + 45)
@@ -135,7 +141,7 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     regions.append(sex_region)
 
     # 民族
-    nationality_y = int(imgHeight / 4.5)
+    nationality_y = int(imgHeight / 4.5)+distance
     nationality_x = left_position + 90
     nationality_addHeight = int(nationality_y + imgHeight / 7.71)
     nationality_addWidth = int(nationality_x + 50)
@@ -152,8 +158,7 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     regions.append(nationality_region)
 
     # 生日 年
-
-    birth_year_y = int(imgHeight / 2.84)
+    birth_year_y = int(imgHeight / 2.84)+distance
     birth_year_x = left_position
     birth_year_addHeight = int(birth_year_y + imgHeight / 7.71)
     birth_year_addWidth = int(birth_year_x + 68)
@@ -171,7 +176,7 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     regions.append(birth_year_region)
 
     # 生日 月
-    birth_month_y = int(imgHeight / 2.84)
+    birth_month_y = int(imgHeight / 2.84)+distance
     birth_month_x = left_position + 80
     birth_month_addHeight = int(birth_month_y + imgHeight / 7.71)
     birth_month_addWidth = int(birth_month_x + 37)
@@ -189,7 +194,7 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     regions.append(birth_month_region)
 
     # 生日 日
-    birth_day_y = int(imgHeight / 2.84)
+    birth_day_y = int(imgHeight / 2.84)+distance
     birth_day_x = left_position + 125
     birth_day_addHeight = int(birth_day_y + imgHeight / 7.71)
     birth_day_addWidth = int(birth_day_x + 37)
@@ -209,7 +214,7 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
     regions.append(address_region)
 
     # 身份证号码
-    id_y = int(imgHeight / 1.3)
+    id_y = int(imgHeight / 1.3)+distance
     id_x = int(imgWidth / 3.06)
     id_addHeight = int(id_y + imgHeight / 6.70)
     id_addWidth = int(id_x + 322)
@@ -240,6 +245,8 @@ def box_get_front_correction(img, save_name, imgHeight, imgWidth, face_rect):
         plt.show()
     cv2.imencode('.jpg', img_copy)[1].tofile(str(save_name))
     return regions
+
+
 
 
 def get_photo_position(img):
@@ -677,7 +684,7 @@ def getpart_info(part):
     return contours
 
 
-def box_get_front_correction(img,addX,addY ,imgHeight,imgWidth,faceLeft,name_y,sex_y,birth_year_y):
+def box_get_front_correction1(img,addX,addY ,imgHeight,imgWidth,faceLeft,name_y,sex_y,birth_year_y):
     '''
     根据地址的坐标 定位其他信息的位置
     :param img: 输入图片
@@ -723,7 +730,8 @@ def box_get_front_correction(img,addX,addY ,imgHeight,imgWidth,faceLeft,name_y,s
 
     # 出生 年
     birth_year_x = addX
-    birth_year_y = birth_year_y # int(addY - imgHeight/4.6)
+    # int(addY - imgHeight/4.6)
+    birth_year_y = birth_year_y
     birth_year_addHeight = int(birth_year_y + imgHeight / 7.71)
     birth_year_addWidth = int(birth_year_x + 75)
     birth_year = img[birth_year_y:birth_year_addHeight, birth_year_x:birth_year_addWidth]
@@ -747,6 +755,77 @@ def box_get_front_correction(img,addX,addY ,imgHeight,imgWidth,faceLeft,name_y,s
     img = cv2.rectangle(img, (birth_day_x, birth_day_y), (birth_day_addWidth, birth_day_addHeight), (0, 0, 255), 2)
 
 
+def box_get_front_correction2(img,addX,addY ,imgHeight,imgWidth,faceLeft,name_y,sex_y,birth_year_y):
+    '''
+    根据地址的坐标 定位其他信息的位置
+    :param img: 输入图片
+    :param addX: 地址的x坐标
+    :param addY: 地址的y坐标
+    :param imgHeight: 图片高度
+    :param imgWidth: 图片宽度
+    :param faceLeft: 人脸左边坐标
+    :return: 文字的位置
+    '''
+    regions = []
+
+    # 地址
+    address_addHeight = int(addY + imgHeight / 2.8)
+    address_addWidth = faceLeft
+    address = img[addY:address_addHeight, addX:address_addWidth]
+    img = cv2.rectangle(img, (addX, addY), (address_addWidth, address_addHeight), (0, 0, 255), 2)
+
+    # 名字
+    name_x = addX
+    name_y = name_y # int(addY - imgHeight/1.65)
+    name_addHeight = int(name_y + 46) + 10
+    name_addWidth = int(name_x + imgWidth / 4)
+    name = img[name_y:name_addHeight, name_x:name_addWidth]
+    img = cv2.rectangle(img, (name_x, name_y), (name_addWidth, name_addHeight), (0, 0, 255), 2)
+
+    # 性别
+    sex_x= addX
+    sex_y= sex_y # int(addY - imgHeight/2.65)
+    sex_addHeight = int(sex_y + imgHeight / 7.71)
+    sex_addWidth = int(sex_x + 45)
+    sex = img[sex_y:sex_addHeight, sex_x:sex_addWidth]
+    img = cv2.rectangle(img, (sex_x, sex_y), (sex_addWidth, sex_addHeight), (0, 0, 255), 2)
+
+    # # 民族
+    # nationality_x = addX + 150
+    # nationality_y = sex_y
+    # nationality_addHeight = int(nationality_y + imgHeight / 7.65)
+    # nationality_addWidth = int(nationality_x + 50)
+    # nationality = img[nationality_y:nationality_addHeight, nationality_x:nationality_addWidth]
+    # img = cv2.rectangle(img, (nationality_x, nationality_y), (nationality_addWidth, nationality_addHeight), (0, 0, 255),
+    #                     2)
+
+    # 出生 年
+    birth_year_x = addX
+    # int(addY - imgHeight/4.6)
+    birth_year_y = birth_year_y
+    birth_year_addHeight = int(birth_year_y + imgHeight / 7.71)
+    birth_year_addWidth = int(birth_year_x + 75)
+    birth_year = img[birth_year_y:birth_year_addHeight, birth_year_x:birth_year_addWidth]
+    img = cv2.rectangle(img, (birth_year_x, birth_year_y), (birth_year_addWidth, birth_year_addHeight), (0, 0, 255), 2)
+
+    # #出生 月
+    # birth_month_x = birth_year_x + 123
+    # birth_month_y = birth_year_y
+    # birth_month_addHeight = int(birth_month_y + imgHeight / 7.6)
+    # birth_month_addWidth = int(birth_month_x + 40)
+    # birth_month = img[birth_month_y:birth_month_addHeight, birth_month_x:birth_month_addWidth]
+    # img = cv2.rectangle(img, (birth_month_x, birth_month_y), (birth_month_addWidth, birth_month_addHeight), (0, 0, 255),
+    #                     2)
+    #
+    # #出生 日
+    # birth_day_x = birth_year_x + 190
+    # birth_day_y = birth_year_y
+    # birth_day_addHeight = int(birth_day_y + imgHeight / 7.6)
+    # birth_day_addWidth = int(birth_day_x + 43)
+    # birth_day = img[birth_day_y:birth_day_addHeight, birth_day_x:birth_day_addWidth]
+    # img = cv2.rectangle(img, (birth_day_x, birth_day_y), (birth_day_addWidth, birth_day_addHeight), (0, 0, 255), 2)
+
+
 #对数组进行排序
 def findSmallest(arr):
     # 将第一个元素的值作为最小值赋给smallest
@@ -767,7 +846,236 @@ def selectionSort(arr):
     return newArr
 
 
-def box_get_front_message(image, save_name):
+# 投影
+def projection(part_1,z2):
+    '''
+
+    :param part_1: 输入图像
+    :param z2: y坐标
+    :return: 框出图像
+    '''
+    pro_Count = list()
+    result = cv2.bilateralFilter(part_1.copy(), 0, 50, 5)
+    gray_part_1 = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+    height, width = part_1.shape[:2]
+    thresh = cv2.adaptiveThreshold(gray_part_1, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                   cv2.THRESH_BINARY, 25, 5)
+
+    # (_, thresh) = cv2.threshold(gray_part_1, 140, 255, cv2.THRESH_BINARY)
+    # cv_show('thresh', thresh)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))  # 形态学处理，定义矩形结构
+    closed = cv2.erode(thresh, kernel, iterations=5)
+    # cv_show('closed', closed)
+    height, width = closed.shape[:2]
+    # print(height, width)
+    v = [0] * width
+    z = [0] * height
+    hfg = [[0 for col in range(2)] for row in range(height)]
+    lfg = [[0 for col in range(2)] for row in range(width)]
+    a = 0
+    # 垂直投影
+    # 统计并存储每一列的黑点数
+    for x in range(0, width):
+        for y in range(0, height):
+            if closed[y][x] == 0:
+                a = a + 1
+            else:
+                continue
+        v[x] = a
+        a = 0
+    l = len(v)
+    # print l
+    # print width
+    # 创建空白图片，绘制垂直投影图
+    emptyImage = np.zeros((height, width, 3), np.uint8)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+
+    for x in range(0, width):
+        for y in range(0, v[x]):
+            b = (255, 255, 255)
+            emptyImage[y, x] = b
+    # cv2.imshow('垂直', emptyImage)
+
+    for p in range(0, 1):
+        incol = 1
+        start1 = 0
+        j1 = 0
+        z1 = hfg[p][0]
+        # z2 = hfg[p][1]
+        for i1 in range(0, width):
+            if incol == 1 and v[i1] >= 20:  # 从空白区进入文字区
+                start1 = i1  # 记录起始列分割点
+                incol = 0
+            elif (i1 - start1 > 3) and v[i1] < 20 and incol == 0:  # 从文字区进入空白区
+                incol = 1
+                lfg[j1][0] = start1 - 2  # 保存列分割位置
+                lfg[j1][1] = i1 + 2
+                l1 = start1 - 2
+                l2 = i1 + 2
+                j1 = j1 + 1
+                cv2.rectangle(part_1, (l1, z1), (l2, z2), (255, 0, 0), 2)
+                pro_Count.append(((l1, z1), (l2, z2)))
+    # print(pro_Count)
+
+    # cv_show('part_1', part_1)
+    return pro_Count
+
+
+# 信息定位
+# def box_get_front_message(image, save_name):
+#
+#     image_copy = image.copy()
+#     detector = dlib.get_frontal_face_detector()
+#     dets = detector(image, 2)  # 使用detector进行人脸检测 dets为返回的结果
+#     # 将识别的图像可视化
+#
+#     predictor = dlib.shape_predictor("../data/shape_predictor_5_face_landmarks.dat")
+#
+#     left = dets[0].left()
+#     top = dets[0].top()
+#     right = dets[0].right()
+#     bottom = dets[0].bottom()
+#     Wwidth=right - left
+#     Hheigt=top - bottom
+#
+#     # 照片的位置（不怎么精确）
+#     width = right - left
+#     high = top - bottom
+#     left2 = np.uint(left - 0.3*width)
+#     bottom2 = np.uint(bottom + 0.6*width)
+#
+#     img = cv2.rectangle(image,(left2,bottom2-20),(left2+2*width-50,bottom2+2*high),(0,0,255),2)
+#
+#     top2 = np.uint(bottom2 + 1.8 * high)
+#     right2 = np.uint(left2 + 1.6 * width)
+#     face_img = image[top2:bottom2, left2:right2, :]
+#
+#     face_gray = cv2.cvtColor(face_img,cv2.COLOR_BGR2GRAY)
+#     ret = cv2.threshold(face_gray,0,255,cv2.THRESH_OTSU|cv2.THRESH_BINARY_INV)[1]
+#     # cv_show('ret',ret)
+#     erode = cv2.erode(ret,(9,9),iterations=3)
+#     dilate = cv2.dilate(erode,(9,9),iterations=3)
+#
+#     '''
+#     找身份证号码的位置
+#     '''
+#     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+#     rectKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(25,25))
+#     sqlKernel = cv2.getStructuringElement(cv2.MORPH_RECT,(15,15))
+#
+#     tophat = cv2.morphologyEx(gray,cv2.MORPH_TOPHAT,sqlKernel)
+#
+#     gradX = cv2.Sobel(tophat,ddepth=cv2.CV_32F,dx=1,dy=0,ksize=-1)
+#     gradX = np.absolute(gradX)
+#     (minVal,maxVal) = (np.min(gradX),np.max(gradX))
+#     gradX = (255*((gradX-minVal)/(maxVal-minVal)))
+#     gradX = gradX.astype('uint8')
+#
+#     gradX = cv2.morphologyEx(gradX,cv2.MORPH_CLOSE,sqlKernel)
+#
+#     thresh=cv2.threshold(gradX, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+#
+#     thresh=cv2.morphologyEx(thresh,cv2.MORPH_CLOSE,rectKernel,iterations=1)
+#
+#     threshCnts=cv2.findContours(thresh.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
+#     cnts=threshCnts
+#
+#     cur_img=img.copy()
+#     cv2.drawContours(cur_img,cnts,-1,(0,0,255),3)
+#
+#
+#     locs=[]
+#     # 遍历轮廓
+#     for (i, c) in enumerate(cnts):
+#         (x, y, w, h)=cv2.boundingRect(c)
+#         ar = w / float(h)
+#         # 选择合适的区域，根据实际任务来，这里的基本上都是四个数字一组
+#         if ar > 5 and ar < 40:
+#             if w > 350 and w < 600:
+#                 # 把符合的留下来
+#                 locs.append((x, y, w, h))
+#
+#     locs=sorted(locs,key=lambda x: x[0])
+#
+#     for (i,(gX,gY,gW,gH)) in enumerate(locs):
+#         # initialize the list of group digits
+#         cv2.rectangle(img,(gX-5,gY-5),(gX+gW+5,gY+gH+5),(0,0,255),2)
+#
+#     result_img=img.copy()
+#     '''
+#      框出信息区域
+#     '''
+#     Xwidth = gW+10
+#     Yheight = gH+10
+#     long = 2*Xwidth
+#     X1 = 2*width
+#     Y1 = 2*high
+#     left3 = left2-(long-X1)
+#
+#     if left3 > 0:
+#         left3 = left3
+#         top2 = bottom2 + 2 * high - 100
+#         point1 = (left3, bottom2)
+#         point2 = (left2, top2)
+#     else:
+#         left3 = 90
+#         top2 = bottom2 + 2 * high - 100
+#         point1 = (left3, bottom2)
+#         point2 = (left2, top2)
+#
+#     if top2 < 0:
+#         top2 = 20
+#     img_copy = img.copy()
+#     cv2.rectangle(img, point1, point2, (0, 0, 255), 2)
+#
+#     part = image_copy[top2:bottom2,left3:left2+15]
+#
+#     retCnts = getpart_info(part)
+#
+#     retCnts = sorted(retCnts, key=cv2.contourArea, reverse=True)
+#     h = retCnts[0]
+#     i = 0
+#     (x, y, w, h) = cv2.boundingRect(h)
+#     x = x + left3
+#     y = y + top2
+#     cv2.rectangle(img, (x - 5, y - 5), (x + w + 5, y + h + 5), (0, 255, 255), 2)
+#
+#     cut = x - 5
+#     part_in=image_copy[top2:y+100,cut:left2+15]
+#
+#     X = x-5
+#     Y = y-5
+#     conCnts = getpart_info(part_in)
+#     countY = []
+#     for c in conCnts:
+#
+#           (x, y, w, h) = cv2. boundingRect(c)
+#           x = x + cut
+#           y = y + top2
+#           if abs(x-cut) < 30 and w > 20:
+#               countY.append(y)
+#               cv2.rectangle(img_copy, (x - 5, y - 5), (x + w + 5, y + h + 5), (0, 255, 0), 2)
+#
+#     countY = selectionSort(countY)
+#
+#     temp = 1
+#     for i in range(1,len(countY)):
+#          temp += 1
+#     if temp == 4 or temp == 5:
+#         box_get_front_correction1(result_img, X , Y ,8 * gH, long, left2,countY[0],countY[1]
+#                                   ,countY[2])
+#     elif temp == 6:
+#         box_get_front_correction1(result_img, X, Y, 8 * gH, long, left2, countY[1], countY[2]
+#                                  , countY[3])
+#
+#     else:
+#         box_get_front_correction1(result_img, X , Y ,8 * gH, long, left2,countY[0],countY[1]
+#                                  ,countY[1]+60)
+#
+#     cv2.imencode('.jpg', result_img)[1].tofile(str(save_name))
+
+# 信息定位
+def box_get_front_message(image, save_name, orig_img):
 
     image_copy = image.copy()
     detector = dlib.get_frontal_face_detector()
@@ -864,7 +1172,7 @@ def box_get_front_message(image, save_name):
         point1 = (left3, bottom2)
         point2 = (left2, top2)
     else:
-        left3 = 90
+        left3 = 50
         top2 = bottom2 + 2 * high - 100
         point1 = (left3, bottom2)
         point2 = (left2, top2)
@@ -893,29 +1201,106 @@ def box_get_front_message(image, save_name):
     Y = y-5
     conCnts = getpart_info(part_in)
     countY = []
+    keyCount = list()
+
     for c in conCnts:
-
-          (x, y, w, h) = cv2. boundingRect(c)
-          x = x + cut
-          y = y + top2
-          if abs(x-cut) < 30 and w > 20:
-              countY.append(y)
-              cv2.rectangle(img_copy, (x - 5, y - 5), (x + w + 5, y + h + 5), (0, 255, 0), 2)
-
+        (x, y, w, h) = cv2. boundingRect(c)
+        x = x + cut
+        y = y + top2
+        if abs(x-cut) < 30 and w > 20:
+            countY.append(y)
+            keyCount.append((y, h, w))
+            cv2.rectangle(img_copy, (x - 5, y - 5), (x + w + 5, y + h + 5), (0, 255, 0), 2)
+    # cv_show('img_copy',img_copy)
     countY = selectionSort(countY)
+    keyCount = selectionSort(keyCount)
+    # print('keycount = ',keyCount)
 
-    temp = 1
-    for i in range(1,len(countY)):
-         temp += 1
-    if temp == 4 or temp == 5:
-        box_get_front_correction(result_img, X , Y ,8 * gH, long, left2,countY[0],countY[1]
-                                  ,countY[2])
-    elif temp == 6:
-        box_get_front_correction(result_img, X, Y, 8 * gH, long, left2, countY[1], countY[2]
-                                 , countY[3])
+    try:
+        # 投影
+        part_1 = image[keyCount[1][0]:keyCount[1][0] + keyCount[1][1], X + keyCount[2][2] + 7:left2]
+        # cv_show('part_1', part_1)
+        pro_count_1 = projection(part_1, keyCount[1][0] + keyCount[1][1])
 
-    else:
-        box_get_front_correction(result_img, X , Y ,8 * gH, long, left2,countY[0],countY[1]
-                                 ,countY[1]+60)
+        (x1, y1), (x2, y2) = pro_count_1[2]
+        cv2.rectangle(result_img, (x1 + X + keyCount[2][2] + 7, y1 + keyCount[1][0]), (x2 + X + keyCount[2][2] + 7, y2),
+                      (0, 0, 255), 2)
+        # cv_show('result_img',result_img)
 
-    cv2.imencode('.jpg', result_img)[1].tofile(str(save_name))
+        # cv_show('res', res)
+
+        part_2 = image[keyCount[2][0]:keyCount[2][0] + keyCount[2][1], X + keyCount[2][2] + 7:left2]
+        # cv_show('part_2', part_2)
+        pro_count_2 = projection(part_2, keyCount[2][0] + keyCount[2][1])
+        (x1, y1), (x2, y2) = pro_count_2[0]
+
+        num_1 = []
+        num_2 = []
+        temp = len(pro_count_2)
+        for i in range(temp):
+            (x1, y1), (x2, y2) = pro_count_2[i]
+            num_1.append(x1)
+            num_2.append(x2)
+
+        # print('num = ', num_1)
+        # 年的x坐标
+        year_x1 = num_1[0]
+        year_x2 = num_2[0]
+        # 根据年的坐标估算月的坐标
+        # print(year_x1)
+        month_x = year_x1 + 68
+        month = []
+
+        for i in range(len(num_1)):
+            if abs(num_1[i] - month_x) < 20:
+                month.append(abs(num_1[i] - month_x))
+                temp = i
+                if i > len(num_1):
+                    break
+
+        month_x = min(month)+month_x
+        # print('month_x',month_x)
+
+        cv2.rectangle(result_img, (year_x2 +(X + keyCount[2][2] + 7), y1 + keyCount[2][0]), (month_x+(X + keyCount[2][2] + 7) , y2), (0, 0, 255), 2)
+        cv2.rectangle(result_img, (num_2[temp] + (X + keyCount[2][2] + 7) + 5, y1 + keyCount[2][0]),
+                          (num_2[temp] + (X + keyCount[2][2] + 7) + 50, y2), (0, 0, 255), 2)
+
+        temp = 1
+        for i in range(1, len(countY)):
+            temp += 1
+            # print(temp)
+        if temp == 4 or temp == 5:
+            box_get_front_correction2(result_img, X, Y, 8 * gH, long, left2, keyCount[0][0], keyCount[1][0]
+                                          , keyCount[2][0])
+        elif temp > 6:
+            for i in temp:
+                if keyCount[i + 1][0] - (keyCount[i][0] + keyCount[i][1]) < 5:
+                    keyCount[i + 1][0] = keyCount[i + 2][0]
+            box_get_front_correction2(result_img, X, Y, 8 * gH, long, left2, keyCount[1][0], keyCount[2][0]
+                                          , keyCount[3][0])
+        else:
+            box_get_front_correction2(result_img, X, Y, 8 * gH, long, left2, keyCount[0][0], keyCount[1][0]
+                                          , keyCount[1][0] + 60)
+
+        result_img = np.hstack((orig_img, result_img))
+        # cv_show('result_img', result_img)
+        cv2.imencode('.jpg', result_img)[1].tofile(str(save_name))
+    except Exception as e:
+        temp = 1
+        for i in range(1,len(countY)):
+            temp += 1
+        if temp == 4 or temp == 5:
+            box_get_front_correction1(result_img, X , Y ,8 * gH, long, left2,countY[0],countY[1]
+                                          ,countY[2])
+        elif temp == 6:
+            box_get_front_correction1(result_img, X, Y, 8 * gH, long, left2, countY[1], countY[2]
+                                         , countY[3])
+
+        else:
+            box_get_front_correction1(result_img, X , Y ,8 * gH, long, left2,countY[0],countY[1]
+                                         ,countY[1]+60)
+        result_img = np.hstack((orig_img, result_img))
+        # cv_show('result_img',result_img)
+        cv2.imencode('.jpg', result_img)[1].tofile(str(save_name))
+
+

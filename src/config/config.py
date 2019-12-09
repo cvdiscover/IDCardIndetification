@@ -29,8 +29,8 @@ is_show_point_lines = 0
 # path_without_img_name：单张地址根目录
 # img_name: 单张图片名称
 ###################################################################
-input_dir = "C:/Users/Alexi/Desktop/idcard_info/sfz_30"
-output_dir = "C:/Users/Alexi/Desktop/idcard_info/sfz_30_result"
-path_without_img_name = "C:/Users/Alexi/Desktop/idcard_info/sfz_front/"
-img_name = "1b486dea-a69b-4eaf-a12a-3c74898cdaa8.jpeg"
+input_dir = "C:/Users/Administrator/PycharmProjects/cread_ocr/sfz_correct/"
+output_dir = "C:/Users/Administrator/PycharmProjects/cread_ocr/last_test_4/"
+path_without_img_name = "C:/Users/Administrator/PycharmProjects/cread_ocr/sfz_correct/"
+img_name = "ff5ee0f8-97f6-4915-99ce-2eda27d1cfb5.jpeg"
 

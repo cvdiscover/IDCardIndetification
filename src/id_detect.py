@@ -46,10 +46,13 @@ def single_process(path, save_name):
     img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), -1)
     orig = img.copy()
     img = resize(orig, width=500)
-    img = face_detect(img)
-    faces = detector(img, 1)
+    origimg = copy.deepcopy(img)
+    orig_img = resize(origimg, height = 506)
 
-    if len(img.shape) == 3:
+    img = face_detect(img)
+    faces = detector(img, 2)
+
+    if len(img.shape) == 2:
         grey = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2GRAY)
     else:
         grey = np.array(img)
@@ -58,14 +61,14 @@ def single_process(path, save_name):
 
     # 人脸框位置
     faces_cv = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
-    if len(faces) > 0 and len(faces_cv) > 0:
+    if len(faces) > 0 or len(faces_cv) > 0:
         face_rect = faces[0]
         faceRects = np.array([[face_rect.left(), face_rect.top(), face_rect.right() - face_rect.left(),
                     face_rect.bottom() - face_rect.top()]])
     else:
         faceRects = np.array([])
     # 判断是否是正面,大于0则检测到人脸,是正面
-    # print(len(faceRects))
+    print('len(faceRects)',len(faceRects))
 
     imgWidth = 500
     imgHeight = 316
@@ -99,13 +102,15 @@ def single_process(path, save_name):
         img = cv2.resize(img, (imgWidth, imgHeight))
 
         if len(faceRects) > 0:
-            faces = detector(img, 1)
-            # plt.imshow(img,cmap=plt.gray())
-            # plt.show()
-            if len(faces) == 0:
+            faces = detector(img, 2)
+            faces1 = classfier.detectMultiScale(img, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
+            plt.imshow(img,cmap=plt.gray())
+            plt.show()
+            if len(faces) == 0 and len(faces1) ==0:
+                print('人脸检测失败')
                 return
             try:
-                box_get_front_message(img, save_name)
+                box_get_front_message(img, save_name, orig_img)
             except Exception as e:
                 print("正面定位失败！")
         else:
@@ -133,7 +138,7 @@ def face_detect(img):
     img_rotation = Image.fromarray(np.array(img_rotation))
 
     # 使用dlib人脸检测模型
-    faces_dlib = detector(np.array(img_rotation), 1)
+    faces_dlib = detector(np.array(img_rotation), 2)
 
     if len(img.shape) == 3:
         gray = cv2.cvtColor(np.array(img_rotation), cv2.COLOR_BGR2GRAY)
@@ -147,7 +152,7 @@ def face_detect(img):
     # print(len(faces_dlib) , len(faces_cv) )
     if len(faces_dlib) == 0 or len(faces_cv) == 0:
         img_rotation = img_rotation.rotate(180, expand=True)
-        faces_dlib = detector(np.array(img_rotation), 1)
+        faces_dlib = detector(np.array(img_rotation), 2)
 
         if len(img.shape) == 3:
             grey = cv2.cvtColor(np.array(img_rotation), cv2.COLOR_BGR2GRAY)
@@ -156,7 +161,7 @@ def face_detect(img):
 
         # 使用opencv人脸检测模型
         faces_cv = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
-        if len(faces_dlib) == 0 or len(faces_cv) == 0:
+        if len(faces_dlib) == 0 and len(faces_cv) == 0:
             is_front = 0
     if is_front:
         return np.array(img_rotation)
