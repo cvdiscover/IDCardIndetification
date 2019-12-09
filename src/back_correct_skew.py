@@ -119,20 +119,17 @@ def correct_image(img):
             print('correct：90°')
             cv2.imshow("img_correction", img_correction)
             cv2.waitKey(0)
+    elif angle < 30 or angle > 150:
+        angle = 0
+        print('Already closed correct')
     else:
-        img_correction = img
         print('Already correct')
 
     img_im = Image.fromarray(img)
     img_correction = np.array(img_im.rotate(angle, expand=True))
-    # 双边均值滤波
-    # img_correction = cv2.pyrMeanShiftFiltering(img_correction, 10, 50)
-    # img_correction = np.array(img_correction)
     img_mark = mark_corner_image(img_correction)
 
     from src.com.tools import project
-
-    # print("radon time:",datetime.now() - start_time)
 
     horizontal_sum = project(img_mark, orientation=0, is_show=1)
     i = 0
@@ -145,7 +142,6 @@ def correct_image(img):
 
     peek_ranges = extract_peek_ranges_from_array(horizontal_sum, minimun_val)
 
-    # img_correct = correct_image(img)
     img_mblur = cv2.medianBlur(img_mark, 1)
 
     elment = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 2))
@@ -169,7 +165,6 @@ def correct_image(img):
         if rect[2] < 150 or rect[3] < 10:
             continue
         rect_m = cv2.minAreaRect(cnt)
-        #print(rect_m)
         rects.append(rect)
         rects_m.append(rect_m)
 
@@ -211,10 +206,8 @@ def get_lines(img):
         x1, y1, x2, y2 = line
         if abs(x1 - x2) > abs(y1 - y2) and math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2) > 100:
             horizontal.append([x1, y1, x2, y2])
-            cv2.line(img2, (x1, y1), (x2, y2), (0, 0, 255), 2)
         elif abs(x1 - x2) < abs(y1 - y2) and math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2) > 50:
             vertical.append([x1, y1, x2, y2])
-            cv2.line(img2, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
     return horizontal, vertical
 
@@ -263,7 +256,7 @@ def back_correct_skew(img):
     d_l_min = w
     d_r_min = w
     for line in vertical:
-        x1, y1, x2, y2 =  line
+        x1, y1, x2, y2 = line
         # 计算竖线倾斜角度
         if x1 - x2 == 0:
             a = 90

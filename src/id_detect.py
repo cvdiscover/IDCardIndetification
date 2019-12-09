@@ -1,8 +1,16 @@
 # -*- coding: UTF-8 -*-
+import sys
+import os
+from PIL import Image
+
 from src.front_correct_skew import correct_skew, resize
-from src.idcard_back_detection import *
+from src.idcard_back_detection import pre_fitline_get_back, box_get_back, find_information
 from src.idcard_front_detection import *
 from src.config.config import *
+
+curPath = os.path.abspath(os.path.dirname(__file__))
+rootPath = os.path.split(curPath)[0]
+sys.path.append(rootPath)
 
 # 加载人脸检测模型
 classfier = cv2.CascadeClassifier("../data/haarcascades/haarcascade_frontalface_alt2.xml")
@@ -12,6 +20,7 @@ detector = dlib.get_frontal_face_detector()
 def batch_process(input_dir="images/", output_dir="output/"):
     """
     批量处理图片
+    :param output_dir: 输出地址
     :param input_dir: 输入文件夹
     :param output_dir: 定位后输出文件夹
     :return:
@@ -20,26 +29,32 @@ def batch_process(input_dir="images/", output_dir="output/"):
         input_dir += "/"
     if output_dir[-1] != "/":
         output_dir += "/"
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    front_output_dir = output_dir + "front/"
+    back_output_dir = output_dir + "back/"
+    if not os.path.exists(front_output_dir):
+        os.makedirs(front_output_dir)
+    if not os.path.exists(back_output_dir):
+        os.makedirs(back_output_dir)
     for filename in os.listdir(input_dir):
         if len(filename.split(".")) < 2 or (filename.split(".")[-1] != "jpg" and filename.split(".")[-1] != "jpeg" and filename.split(".")[-1] != "png"):
             continue
-
+        print("#############################\n")
         print(filename)
         path = input_dir + filename
-        save_name = output_dir + filename
+        front_save_name = front_output_dir + filename
+        back_save_name = back_output_dir + filename
         try:
-            single_process(path, save_name)
+            single_process(path, front_save_name, back_save_name)
         except Exception as e:
             print(e)
 
 
-def single_process(path, save_name):
+def single_process(path, front_save_name, back_save_name):
     """
     单张调试
+    :param back_save_name: 反面存储地址
+    :param front_save_name: 正面存储地址
     :param path:文件地址
-    :param save_name:存储地址
     :return:
     """
 
@@ -52,7 +67,7 @@ def single_process(path, save_name):
     img = face_detect(img)
     faces = detector(img, 2)
 
-    if len(img.shape) == 2:
+    if len(img.shape) == 3:
         grey = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2GRAY)
     else:
         grey = np.array(img)
@@ -78,11 +93,11 @@ def single_process(path, save_name):
         if len(faceRects) > 0:
             max_face = faceRects[np.where(faceRects[:, 3] == faceRects[:, 3].max())]
             regions = box_get_front_correction(
-                copy.deepcopy(img), save_name, imgHeight, imgWidth, max_face)
+                copy.deepcopy(img), front_save_name, imgHeight, imgWidth, max_face)
             is_need_correct_skew = check_location(img, regions)
         else:
             img = resize(orig.copy(), width=500)
-            if not pre_fitline_get_back(img.copy(), save_name):
+            if not pre_fitline_get_back(img.copy(), back_save_name):
                 is_need_correct_skew = 1
 
     except Exception as e:
@@ -115,7 +130,11 @@ def single_process(path, save_name):
                 print("正面定位失败！")
         else:
             try:
-                box_get_back(img, save_name, 316, 500)
+                marked_image = find_information(img)
+                if marked_image is None:
+                    box_get_back(img, back_save_name, 316, 500)
+                else:
+                    cv2.imencode('.jpg', marked_image)[1].tofile(str(back_save_name))
             except Exception as e:
                 print("反面定位失败！")
                 pass
@@ -171,9 +190,6 @@ def face_detect(img):
 
 if __name__ == "__main__":
 
-    # 0-单张处理； 1-批量处理
-    is_batch = 1
-
     # 批量处理
     if is_batch:
         batch_process(input_dir, output_dir)
@@ -182,5 +198,9 @@ if __name__ == "__main__":
     else:
         img_name = img_name
         path = path_without_img_name + img_name
-        save_name = "../output/"+img_name.split(".")[0]+".jpg"
-        single_process(path, save_name)
+        if single_output_dir[-1] != "/":
+            single_output_dir += "/"
+        if not os.path.exists(single_output_dir):
+            os.makedirs(single_output_dir)
+        save_name = single_output_dir + img_name.split(".")[0]+".jpg"
+        single_process(path, save_name, save_name)
