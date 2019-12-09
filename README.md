@@ -4,14 +4,14 @@
 ## 运行环境
 
 python：3.7.3 \
-opencv-python：4.1.1.26 \
-opencv-contrib-python：3.4.2.17 \
+opencv-python：3.4.2.16 \
+opencv-contrib-python：3.4.2.16 \
 Pillow：6.2.1 \
 cmake：3.15.3 \
 dlib：19.18.0 \
 matplotlib：3.1.1 \
 numpy：1.17.3 \
-scipy：1.3.1 \
+scipy：1.3.3 
 
 ## 项目结构
 

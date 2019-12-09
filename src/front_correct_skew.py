@@ -1,4 +1,3 @@
-import dlib
 from src.back_correct_skew import back_correct_skew
 from src.config.config import *
 from src.com.tools import *
@@ -2282,6 +2281,7 @@ def front_correct_skew1(img):
     # 按直线中点位置排序
 
     return best_lines, img2
+
 
 # 正反面纠偏
 def correct_skew(img, is_front, max_face=[0, 0, 0, 0]):
