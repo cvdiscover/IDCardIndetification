@@ -9,6 +9,7 @@ from PIL import Image
 import copy
 
 
+
 def cv_show(name, img):
     cv2.imshow(name, img)
     cv2.waitKey(0)
@@ -181,19 +182,30 @@ def face_detect_rotation(img):
     detector = dlib.get_frontal_face_detector()
     # 加载5个关键点的定位
     predictor = dlib.shape_predictor('../data/shape_predictor_5_face_landmarks.dat')
+    # 添加人脸数据集，采用分类器
+    classfier = cv2.CascadeClassifier("../data/haarcascades/haarcascade_frontalface_alt2.xml")
+
 
     orig = img.copy()
     img1 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # 人脸分类器，添加数据集
+    faces_cv = classfier.detectMultiScale(img1, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
 
     # 人脸检测，检测出来人脸框,2表示采样次数，得到人脸检测的大框Z
     rects = detector(img1, 2)
-
-    # 自定义旋转
-    # 通过人脸检测来进行图像的旋转处理，从而进行人脸检测
-    # 对人脸框进行关键点的定位，人脸关键点相对于框的位置
-    shape = predictor(img1, rects[0])
-    # 转换成ndarray格式，转换成坐标值
-    shape = shape_to_np(shape)
+    print('faces_cv', faces_cv)
+    print('rects', len(rects))
+    if len(rects) == 0:
+        faces_cv = dlib.rectangle(int(faces_cv[0][0]), int(faces_cv[0][1]), int(faces_cv[0][0]) + int(faces_cv[0][2]),
+                                  int(faces_cv[0][1]) + int(faces_cv[0][3]))
+        shape = predictor(img1, faces_cv)
+        shape = shape_to_np(shape)
+        # print('shape1', shape)
+    else:
+        shape = predictor(img1, rects[0])
+        # 转换成ndarray格式，转换成坐标值
+        shape = shape_to_np(shape)
+        # print('shape2', shape)
     ratio = img.shape[1] / 500.0
 
     img2 = copy.deepcopy(img)
@@ -202,6 +214,7 @@ def face_detect_rotation(img):
     img1 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     rects = detector(img1, 2)
+    faces_cv = classfier.detectMultiScale(img1, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
     plt.figure()
     ax = plt.subplot(111)
     ax.imshow(img4)
@@ -212,11 +225,18 @@ def face_detect_rotation(img):
     for i in np.arange(5):
         plt.text(shape[i, 0] - 8, shape[i, 1] - 8, i)
     # plt.show()
-    print('人脸检测完毕')
+    # print('人脸检测完毕')
+    if len(rects) == 0:
+        faces_cv = dlib.rectangle(int(faces_cv[0][0]), int(faces_cv[0][1]), int(faces_cv[0][0]) + int(faces_cv[0][2]),
+                                  int(faces_cv[0][1]) + int(faces_cv[0][3]))
+        shape = predictor(img1, faces_cv)
+        shape = shape_to_np(shape)
+    else:
+        shape = predictor(img1, rects[0])
+        # 转换成ndarray格式，转换成坐标值
+        shape = shape_to_np(shape)
 
-    # 读取图片，并且做初始化旋转操作#读取图片+人脸识别
-    shape = predictor(img1, rects[0])
-    shape = shape_to_np(shape)
+
     x1 = shape[2][0]
     y1 = shape[2][1]
     x2 = shape[0][0]
@@ -248,6 +268,35 @@ def cal_rotation_angle(img):
     rotate_angle = max_index[0][0]
 
     return rotate_angle
+
+
+# 旋转：检测不到人脸，则整体旋转n个90度
+def rotation_img(img):
+    '''
+    :param orig_img:原图
+    :return: 旋转后的图像
+    '''
+    detector = dlib.get_frontal_face_detector()
+    predictor = dlib.shape_predictor("../data/shape_predictor_5_face_landmarks.dat")
+    # 人脸检测，检测出来人脸框,2表示采样次数，得到人脸检测的大框Z
+    rects = detector(img, 2)
+
+
+    # 通过人脸检测来进行图像的旋转处理，从而进行人脸检测
+    for i in range(90, 360, 90):
+        if len(rects) == 0:
+            img1 = Image.fromarray(np.array(img))
+            rot = img1.rotate(90, expand=True)
+            img_rotation = Image.fromarray(np.array(rot))
+            img = np.array(img_rotation)
+            img1 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            rects = detector(img1, 2)
+            if len(rects) != 0:
+                break
+            else:
+                continue
+    img = resize(img, width=500)
+    return img
 
 
 # 人脸检测（判断正反面）
@@ -338,17 +387,16 @@ def predict_rect(gray, scr, shape):
 
         # 选择合适的区域，根据实际任务来，这里的基本上都是四个数字一组
         if ar > 11 and ar < 40 and y >= shape[4][1]+1.5*(shape[4][1]-mid) and w >= 120:
-
             # 把符合的留下来
             locs.append((x, y, w, h))
 
-            gX = locs[0][0]
-            gY = locs[0][1]
-            gW = locs[0][2]
-            gH = locs[0][3]
-            cv2.rectangle(scr, (gX - 3, gY - 3), (gX + gW + 3, gY + gH + 3), (0, 0, 255), 2)
+            GX1 = locs[0][0]
+            GY1 = locs[0][1]
+            GW1 = locs[0][2]
+            GH1 = locs[0][3]
+            cv2.rectangle(scr, (GX1 - 3, GY1 - 3), (GX1 + GW1 + 3, GY1 + GH1 + 3), (0, 0, 255), 2)
             detect_id = []
-            detect_id.append([gX - 3, gY - 3, gX + gW + 3, gY + gH + 3])
+            detect_id.append([GX1 - 3, GY1 - 3, GX1 + GW1 + 3, GY1 + GH1 + 3])
 
     # 预估grabcut的rect值
     if len(locs) == 0:
@@ -2153,6 +2201,55 @@ def front_correct_skew(img):
     return t_l_point, t_r_point, b_l_point, b_r_point, img2
 
 
+# 纠偏失败后，采用新的纠偏
+def front_correct_skew_after_failed(img):
+    '''
+    :param img:原图
+    :return: 纠偏后的图片
+    '''
+
+    shape, img1, img2, img4, img5, ratio = face_detect_rotation(img)
+    lt_x, lt_y, leng, wid = predict_rect(img1, img2, shape)
+    l1 = grabcut_correct(img2, lt_x, lt_y, leng, wid)
+    l_limit, v_limit = line_area(l1, lt_x, lt_x + leng, lt_y, lt_y + wid)
+    top_line, bottom_line, left_line, right_line = classify_lines(l_limit, v_limit)
+    t_l_point, t_r_point, b_l_point, b_r_point = find_cross_point1(top_line, bottom_line, left_line, right_line)
+
+    # # 用红色画出四个顶点
+    # for point in t_l_point, t_r_point, b_l_point, b_r_point:
+    #     cv2.circle(img, (point[0], point[1]), 8, (0, 0, 255), 2)
+
+    # # 用蓝色画出四条边
+    # cv2.line(img, (t_l_point[0], t_l_point[1]), (t_r_point[0], t_r_point[1]), (255, 0, 0), 3)
+    # cv2.line(img, (b_r_point[0], b_r_point[1]), (t_r_point[0], t_r_point[1]), (255, 0, 0), 3)
+    # cv2.line(img, (b_r_point[0], b_r_point[1]), (b_l_point[0], b_l_point[1]), (255, 0, 0), 3)
+    # cv2.line(img, (b_l_point[0], b_l_point[1]), (t_l_point[0], t_l_point[1]), (255, 0, 0), 3)
+    # if is_debug == 1:
+    #     plt.imshow(img)
+    #     plt.show()
+
+    # 透视变换
+    width = 500  # 生成图的宽
+    height = 316  # 生成图的高
+
+    # 原图中的四个角点
+    pts1 = np.float32([list(t_l_point), list(t_r_point), list(b_l_point), list(b_r_point)])
+
+    # 变换后分别在左上、右上、左下、右下四个点
+    pts2 = np.float32([[0, 0], [width, 0], [0, height], [width, height]])
+
+    # 生成透视变换矩阵
+    M = cv2.getPerspectiveTransform(pts1, pts2)
+
+    # 进行透视变换
+    dst = cv2.warpPerspective(img, M, (width, height))
+    plt.imshow(dst, cmap=plt.gray())
+    plt.show()
+    if is_debug == 1:
+        plt.imshow(dst)
+        plt.show()
+    return dst
+
 # 根据斜率k和b选择最佳直线的正面纠偏
 def front_correct_skew1(img):
     """
@@ -2300,13 +2397,18 @@ def correct_skew(img, is_front, max_face=[0, 0, 0, 0]):
         try:
             t_l_point, t_r_point, b_l_point, b_r_point, img2 = front_correct_skew(img)
         except Exception as e:
-            shape, img1, img2, img4, img5, ratio = face_detect_rotation(img)
-            lt_x, lt_y, leng, wid = predict_rect(img1, img2, shape)
-            l1 = grabcut_correct(img2, lt_x, lt_y, leng, wid)
-            l_limit, v_limit = line_area(l1, lt_x, lt_x + leng, lt_y, lt_y + wid)
-            top_line, bottom_line, left_line, right_line = classify_lines(l_limit, v_limit)
-            t_l_point, t_r_point, b_l_point, b_r_point = find_cross_point1(top_line, bottom_line, left_line, right_line)
-
+            try:
+                shape, img1, img2, img4, img5, ratio = face_detect_rotation(img)
+                lt_x, lt_y, leng, wid = predict_rect(img1, img2, shape)
+                l1 = grabcut_correct(img2, lt_x, lt_y, leng, wid)
+                l_limit, v_limit = line_area(l1, lt_x, lt_x + leng, lt_y, lt_y + wid)
+                top_line, bottom_line, left_line, right_line = classify_lines(l_limit, v_limit)
+                t_l_point, t_r_point, b_l_point, b_r_point = find_cross_point1(top_line, bottom_line, left_line, right_line)
+                print('进入第二种纠偏方法')
+            except Exception as e:
+                gray = cv2.cvtColor(img_original, cv2.COLOR_BGR2GRAY)
+                print('两种纠偏失效')
+                return gray
         # 用红色画出四个顶点
         for point in t_l_point, t_r_point, b_l_point, b_r_point:
             cv2.circle(img, (point[0],point[1]), 8, (0, 0, 255), 2)
@@ -2319,7 +2421,6 @@ def correct_skew(img, is_front, max_face=[0, 0, 0, 0]):
         if is_debug == 1:
             plt.imshow(img)
             plt.show()
-            cv2.imwrite("img_test1.jpg", img)
 
         # 透视变换
         width = 500  # 生成图的宽
@@ -2382,3 +2483,5 @@ def correct_skew(img, is_front, max_face=[0, 0, 0, 0]):
             plt.show()
         # 保存图片
         return dst
+
+

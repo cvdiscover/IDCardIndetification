@@ -3,10 +3,11 @@ import sys
 import os
 from PIL import Image
 
-from src.front_correct_skew import correct_skew, resize
+from src.front_correct_skew import *
 from src.idcard_back_detection import pre_fitline_get_back, box_get_back, find_information
 from src.idcard_front_detection import *
 from src.config.config import *
+
 
 curPath = os.path.abspath(os.path.dirname(__file__))
 rootPath = os.path.split(curPath)[0]
@@ -77,11 +78,30 @@ def single_process(path, front_save_name, back_save_name):
     # 人脸框位置
     faces_cv = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
     if len(faces) > 0 or len(faces_cv) > 0:
-        face_rect = faces[0]
-        faceRects = np.array([[face_rect.left(), face_rect.top(), face_rect.right() - face_rect.left(),
-                    face_rect.bottom() - face_rect.top()]])
+        try:
+            face_rect = faces[0]
+            faceRects = np.array([[face_rect.left(), face_rect.top(), face_rect.right() - face_rect.left(),
+                        face_rect.bottom() - face_rect.top()]])
+            print('faceRects', faceRects)
+        # 这里报错指的是dlib未检测到人脸，但是detectMultiScale分类器检测到了
+        except Exception as e:
+            face_rect = faces_cv[0]
+            print('face_rect', face_rect)
+            faceRects = np.array([[face_rect[0], face_rect[1], face_rect[2], face_rect[3]]])
     else:
-        faceRects = np.array([])
+        try:
+            img = rotation_img(orig_img)
+            img3 = img.copy()
+            img1 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+            rects = detector(img1, 2)
+            face_rect = rects[0]
+            faceRects = np.array([[face_rect.left(), face_rect.top(), face_rect.right() - face_rect.left(),
+                                   face_rect.bottom() - face_rect.top()]])
+        except Exception as e:
+            faceRects = np.array([])
+            print('初次人脸检测失败')
+
     # 判断是否是正面,大于0则检测到人脸,是正面
     print('len(faceRects)',len(faceRects))
 
@@ -99,7 +119,6 @@ def single_process(path, front_save_name, back_save_name):
             img = resize(orig.copy(), width=500)
             if not pre_fitline_get_back(img.copy(), back_save_name):
                 is_need_correct_skew = 1
-
     except Exception as e:
         print("初次定位出错，需要进行纠偏！")
         is_need_correct_skew = 1
@@ -111,33 +130,87 @@ def single_process(path, front_save_name, back_save_name):
             img = correct_skew(img, 1, max_face)
         else:
             img = correct_skew(img, 0)
+        print('len(img.shape)', len(img.shape))
+    # 纠偏失败(纠偏失败返回的是灰度图，成功返回的是纠偏完后的图)
+        if len(img.shape) == 2:
+            img = front_correct_skew_after_failed(orig_img)
+            imgWidth1 = 800
+            imgHeight2 = 506
+            img = cv2.resize(img, (imgWidth1, imgHeight2))
 
-        imgWidth = 800
-        imgHeight = 506
-        img = cv2.resize(img, (imgWidth, imgHeight))
+            if len(faceRects) > 0:
+                faces = detector(img, 2)
+                faces1 = classfier.detectMultiScale(img, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
+                plt.imshow(img,cmap=plt.gray())
+                plt.show()
+                if len(faces) == 0 and len(faces1) ==0:
+                    try:
+                        print('人脸检测失败，二次纠偏中。。。')
+                        img = front_correct_skew_after_failed(orig_img)
+                        img = cv2.resize(img, (800, 506))
+                    except Exception as e:
+                        print('人脸检测失败')
+                try:
+                    box_get_front_message(img, front_save_name, orig_img)
+                except Exception as e:
+                    try:
+                        print('进入第二次纠偏定位')
+                        # 采用第二种旋转方案
+                        img_r = rotation_img(orig_img)
+                        img_skew = front_correct_skew_after_failed(img_r)
+                        img = cv2.resize(img_skew, (800, 506))
+                        box_get_front_message(img, front_save_name, orig_img)
+                    except Exception as e:
+                        print("正面定位失败！")
+            else:
+                try:
+                    marked_image = find_information(img)
+                    if marked_image is None:
+                        box_get_back(img, back_save_name, 316, 500)
+                    else:
+                        cv2.imencode('.jpg', marked_image)[1].tofile(str(back_save_name))
+                except Exception as e:
+                    print("反面定位失败！")
+                    pass
+        elif len(img.shape) == 3:
+            imgWidth1 = 800
+            imgHeight2 = 506
+            img = cv2.resize(img, (imgWidth1, imgHeight2))
 
-        if len(faceRects) > 0:
-            faces = detector(img, 2)
-            faces1 = classfier.detectMultiScale(img, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
-            plt.imshow(img,cmap=plt.gray())
-            plt.show()
-            if len(faces) == 0 and len(faces1) ==0:
-                print('人脸检测失败')
-                return
-            try:
-                box_get_front_message(img, save_name, orig_img)
-            except Exception as e:
-                print("正面定位失败！")
-        else:
-            try:
-                marked_image = find_information(img)
-                if marked_image is None:
-                    box_get_back(img, back_save_name, 316, 500)
-                else:
-                    cv2.imencode('.jpg', marked_image)[1].tofile(str(back_save_name))
-            except Exception as e:
-                print("反面定位失败！")
-                pass
+            if len(faceRects) > 0:
+                faces = detector(img, 2)
+                faces1 = classfier.detectMultiScale(img, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
+                plt.imshow(img,cmap=plt.gray())
+                plt.show()
+                if len(faces) == 0 and len(faces1) ==0:
+                    try:
+                        print('人脸检测失败，二次纠偏中。。。')
+                        img = front_correct_skew_after_failed(orig_img)
+                        img = cv2.resize(img, (800, 506))
+                    except Exception as e:
+                        print('人脸检测失败')
+                try:
+                    box_get_front_message(img, front_save_name, orig_img)
+                except Exception as e:
+                    try:
+                        print('进入第二次纠偏定位')
+                        # 采用第二种旋转方案
+                        img_r = rotation_img(orig_img)
+                        img_skew = front_correct_skew_after_failed(img_r)
+                        img = cv2.resize(img_skew, (800, 506))
+                        box_get_front_message(img, front_save_name, orig_img)
+                    except Exception as e:
+                        print("正面定位失败！")
+            else:
+                try:
+                    marked_image = find_information(img)
+                    if marked_image is None:
+                        box_get_back(img, back_save_name, 316, 500)
+                    else:
+                        cv2.imencode('.jpg', marked_image)[1].tofile(str(back_save_name))
+                except Exception as e:
+                    print("反面定位失败！")
+                    pass
 
 
 def face_detect(img):
