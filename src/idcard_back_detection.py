@@ -190,6 +190,33 @@ def pre_fitline_get_back(src, save_name):
     :param save_name: 存储路径
     :return: 成功返回True  失败返回False
     """
+    ret, result, dst, img = national_emblem_judgement(src)
+    if(ret):
+        try:
+            (h, w) = img.copy().shape[:2]
+            pre_angle_points = predict_edge(dst, w, h)
+            after_basic_img = close_demo(basic_demo(result.copy()))
+
+            fit_points = fit_line(after_basic_img, pre_angle_points, result.copy())
+            if fit_points is None:
+                result = perspective_transformation(pre_angle_points, None, result.copy())
+            else:
+                result = perspective_transformation(fit_points, "fitline", result.copy())
+            marked_image = find_information(result.copy())
+
+            if marked_image is not None:
+                cv2.imencode('.jpg', marked_image)[1].tofile(str(save_name))
+                return True
+            else:
+                return False
+        except Exception as E:
+            print(E)
+    else:
+        print(save_name + "标记点不准确")
+        return False
+
+
+def national_emblem_judgement(src):
     img, text1, text2 = correct_image(src.copy())
     result, dst = flann_univariate_matching(img.copy())
     if result is not None and dst is not None:
@@ -197,28 +224,13 @@ def pre_fitline_get_back(src, save_name):
             result, dst = flann_univariate_matching(cv2.flip(cv2.flip(img.copy(), 1), 0))
         if result is not None and dst is not None:
             if len_judge(result, dst):
-                try:
-                    (h, w) = img.copy().shape[:2]
-                    pre_angle_points = predict_edge(dst, w, h)
-                    after_basic_img = close_demo(basic_demo(result.copy()))
-
-                    fit_points = fit_line(after_basic_img, pre_angle_points, result.copy())
-                    if fit_points is None:
-                        result = perspective_transformation(pre_angle_points, None, result.copy())
-                    else:
-                        result = perspective_transformation(fit_points, "fitline", result.copy())
-                    marked_image = find_information(result.copy())
-
-                    if marked_image is not None:
-                        cv2.imencode('.jpg', marked_image)[1].tofile(str(save_name))
-                        return True
-                    else:
-                        return False
-                except Exception as E:
-                    print(E)
+                return True, result, dst, img
             else:
-                print(save_name + "标记点不准确")
-                return False
+                return False, result, dst, img
+        else:
+            return False, result, dst, img
+    else:
+        return False, result, dst, img
 
 
 # 裁剪好的图像寻找信息位置
