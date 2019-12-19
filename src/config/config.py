@@ -13,7 +13,7 @@ national_emblem_direct = "../data/national_emblem.png"
 proportion = [32/129, -375/129, -627/129, 30/129]
 
 # 0-单张处理； 1-批量处理
-is_batch = 1
+is_batch = 0
 # 0-非debug模式； 1-debug模式
 is_debug = 0
 
@@ -33,10 +33,10 @@ is_show_point_lines = 0
 # path_without_img_name：单张地址根目录
 # img_name: 单张图片名称
 ###################################################################
-input_dir = "C:/Users/Administrator/PycharmProjects/cread_ocr/test111/"
-output_dir = "C:/Users/Administrator/PycharmProjects/cread_ocr/result20191217/"
+input_dir = "C:/Users/Administrator/PycharmProjects/cread_ocr/SFZ/"
+output_dir = "C:/Users/Administrator/PycharmProjects/cread_ocr/result20191219/"
 
-path_without_img_name = "C:/Users/Administrator/PycharmProjects/cread_ocr/test111/"
-img_name = "a49cf4fe-bf93-4368-965e-4b81d4259e84.jpeg"
-single_output_dir = "C:/Users/Administrator/PycharmProjects/cread_ocr/result20191217/"
+path_without_img_name = "C:/Users/Administrator/PycharmProjects/cread_ocr/SFZ/"
+img_name = "05da8d69-a3dd-4904-962a-88251f2da67c.jpeg"
+single_output_dir = "C:/Users/Administrator/PycharmProjects/cread_ocr/result20191219/"
 

@@ -65,6 +65,14 @@ def single_process(path, front_save_name, back_save_name):
     origimg = copy.deepcopy(img)
     orig_img = resize(origimg, height = 506)
 
+    # 人脸检测
+    img = face_detect(origimg)  # 改为origimg
+    faces = detector(img, 2)
+    if len(img.shape) == 3:
+        grey = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2GRAY)
+    else:
+        grey = np.array(img)
+
     # 国徽检测
     ret = national_emblem_judgement(img.copy())[0]
     if ret is True:
@@ -73,27 +81,22 @@ def single_process(path, front_save_name, back_save_name):
 
     else:
         try:
-            img = correct_skew(img.copy(), 0)
-            marked_image = find_information(img)
-            if marked_image is None:
-                print("反面定位失败！")
-                # box_get_back(img, back_save_name, 316, 500)
+            if len(faces) == 0:
+                img = correct_skew(img.copy(), 0)
+                marked_image = find_information(img)
+                if marked_image is None:
+                    print("反面定位失败！")
+                    # box_get_back(img, back_save_name, 316, 500)
+                else:
+                    cv2.imencode('.jpg', marked_image)[1].tofile(str(back_save_name))
+                    return
             else:
-                cv2.imencode('.jpg', marked_image)[1].tofile(str(back_save_name))
-                return
+                print("反面定位失败")
         except Exception as e:
             print("反面定位失败！")
 
     if ret is False:
-        # 人脸检测
-        img = face_detect(img)
-        faces = detector(img, 2)
-        if len(img.shape) == 3:
-            grey = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2GRAY)
-        else:
-            grey = np.array(img)
-        # 使用opencv人脸检测模型
-        # 人脸框位置
+
         faces_cv = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
         if len(faces) > 0 or len(faces_cv) > 0:
             try:
@@ -119,7 +122,6 @@ def single_process(path, front_save_name, back_save_name):
                 faceRects = np.array([])
                 print('初次人脸检测失败')
 
-        # 判断是否是正面,大于0则检测到人脸,是正面
         print('len(faceRects)',len(faceRects))
 
         imgWidth = 500
@@ -142,6 +144,7 @@ def single_process(path, front_save_name, back_save_name):
             img = correct_skew(img, 1, max_face)
             print('len(img.shape)', len(img.shape))
         # 纠偏失败(纠偏失败返回的是灰度图，成功返回的是纠偏完后的图)
+
             if len(img.shape) == 2:
                 img = front_correct_skew_after_failed(orig_img)
                 imgWidth1 = 800
@@ -152,6 +155,7 @@ def single_process(path, front_save_name, back_save_name):
                 faces1 = classfier.detectMultiScale(img, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
                 plt.imshow(img,cmap=plt.gray())
                 plt.show()
+
                 if len(faces) == 0 and len(faces1) ==0:
                     try:
                         print('人脸检测失败，二次纠偏中。。。')
@@ -171,6 +175,7 @@ def single_process(path, front_save_name, back_save_name):
                         box_get_front_message(img, front_save_name, orig_img)
                     except Exception as e:
                         print("正面定位失败！")
+
             elif len(img.shape) == 3:
                 imgWidth1 = 800
                 imgHeight2 = 506
