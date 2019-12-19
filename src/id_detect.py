@@ -77,26 +77,40 @@ def single_process(path, front_save_name, back_save_name):
     ret = national_emblem_judgement(img.copy())[0]
     if ret is True:
         img = resize(orig.copy(), width=500)
-        pre_fitline_get_back(img.copy(), back_save_name)
-
+        ret = pre_fitline_get_back(img.copy(), back_save_name)
+        if len(faces) == 0 and ret is False:
+            img = correct_skew(img.copy(), 0)
+            marked_image = find_information(img)
+            if marked_image is None:
+                ret = False
+                print("反面定位失败1！")
+                # box_get_back(img, back_save_name, 316, 500)
+            else:
+                cv2.imencode('.jpg', marked_image)[1].tofile(str(back_save_name))
+                return
+        else:
+            ret = False
+            print("反面定位失败2!")
     else:
         try:
             if len(faces) == 0:
                 img = correct_skew(img.copy(), 0)
                 marked_image = find_information(img)
                 if marked_image is None:
-                    print("反面定位失败！")
+                    ret = False
+                    print("反面定位失败3！")
                     # box_get_back(img, back_save_name, 316, 500)
                 else:
                     cv2.imencode('.jpg', marked_image)[1].tofile(str(back_save_name))
                     return
             else:
-                print("反面定位失败")
+                ret = False
+                print("反面定位失败4!")
         except Exception as e:
-            print("反面定位失败！")
+            ret = False
+            print("反面定位失败5！")
 
     if ret is False:
-
         faces_cv = classfier.detectMultiScale(grey, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
         if len(faces) > 0 or len(faces_cv) > 0:
             try:
@@ -153,8 +167,9 @@ def single_process(path, front_save_name, back_save_name):
 
                 faces = detector(img, 2)
                 faces1 = classfier.detectMultiScale(img, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
-                plt.imshow(img,cmap=plt.gray())
-                plt.show()
+                if is_debug == 1:
+                    plt.imshow(img,cmap=plt.gray())
+                    plt.show()
 
                 if len(faces) == 0 and len(faces1) ==0:
                     try:
@@ -183,8 +198,9 @@ def single_process(path, front_save_name, back_save_name):
 
                 faces = detector(img, 2)
                 faces1 = classfier.detectMultiScale(img, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
-                plt.imshow(img,cmap=plt.gray())
-                plt.show()
+                if is_debug == 1:
+                    plt.imshow(img,cmap=plt.gray())
+                    plt.show()
                 if len(faces) == 0 and len(faces1) ==0:
                     try:
                         print('人脸检测失败，二次纠偏中。。。')
@@ -204,6 +220,8 @@ def single_process(path, front_save_name, back_save_name):
                         box_get_front_message(img, front_save_name, orig_img)
                     except Exception as e:
                         print("正面定位失败！")
+
+
 
 
 

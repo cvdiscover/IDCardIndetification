@@ -13,7 +13,7 @@ national_emblem_direct = "../data/national_emblem.png"
 proportion = [32/129, -375/129, -627/129, 30/129]
 
 # 0-单张处理； 1-批量处理
-is_batch = 0
+is_batch = 1
 # 0-非debug模式； 1-debug模式
 is_debug = 0
 
@@ -33,10 +33,10 @@ is_show_point_lines = 0
 # path_without_img_name：单张地址根目录
 # img_name: 单张图片名称
 ###################################################################
-input_dir = "C:/Users/Administrator/PycharmProjects/cread_ocr/SFZ/"
-output_dir = "C:/Users/Administrator/PycharmProjects/cread_ocr/result20191219/"
+input_dir = "C:/Users/Alexi/Desktop/idcard_info/Unrecognized_Front/"
+output_dir = "C:/Users/Alexi/Desktop/idcard_info/sfz_single_result/"
 
-path_without_img_name = "C:/Users/Administrator/PycharmProjects/cread_ocr/SFZ/"
-img_name = "05da8d69-a3dd-4904-962a-88251f2da67c.jpeg"
-single_output_dir = "C:/Users/Administrator/PycharmProjects/cread_ocr/result20191219/"
+path_without_img_name = "C:/Users/Alexi/Desktop/idcard_info/sfz_back/"
+img_name = "6a995812-5e0a-492c-a30a-52ab94828317.jpeg"
+single_output_dir = "C:/Users/Alexi/Desktop/idcard_info/sfz_single_result"
 

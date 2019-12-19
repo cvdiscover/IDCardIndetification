@@ -215,9 +215,9 @@ def face_detect_rotation(img):
 
     rects = detector(img1, 2)
     faces_cv = classfier.detectMultiScale(img1, scaleFactor=1.2, minNeighbors=3, minSize=(32, 32))
-    plt.figure()
-    ax = plt.subplot(111)
-    ax.imshow(img4)
+    # plt.figure()
+    # ax = plt.subplot(111)
+    # ax.imshow(img4)
 
     # 5点法检测人脸，左眼、右眼和唇上口#检测眼睛个唇上口的位置
     # 'ro'表示red，'o'类型的线条
@@ -450,7 +450,7 @@ def line_detect(after_contours, scr):
     # lines[:,0,:]将直线压缩成二维图像，找出两个端点(降低维度)
     for x1, y1, x2, y2 in l1:
         cv2.line(scr, (x1, y1), (x2, y2), (0, 255, 0), 1)
-    plt.imshow(scr, cmap=plt.gray())
+    # plt.imshow(scr, cmap=plt.gray())
     return l1
 
 
@@ -2243,8 +2243,8 @@ def front_correct_skew_after_failed(img):
 
     # 进行透视变换
     dst = cv2.warpPerspective(img, M, (width, height))
-    plt.imshow(dst, cmap=plt.gray())
-    plt.show()
+    # plt.imshow(dst, cmap=plt.gray())
+    # plt.show()
     if is_debug == 1:
         plt.imshow(dst)
         plt.show()
